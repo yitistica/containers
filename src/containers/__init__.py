@@ -1,4 +1,14 @@
-"""Top-level package for containers."""
+"""Top-level package for containers.
+
+functions:
+
+fix keys;
+validations;
+form like a data model, then you can inherit then use it as a dict;
+implement attribute dictionary with search filter;
+default value
+attribute,
+"""
 
 __author__ = """Yi Q"""
 __email__ = 'yitistica@outlook.com'
