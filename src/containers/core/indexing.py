@@ -11,6 +11,11 @@ values.
 
 
 keeping track of true index for key and value;
+
+.drop()
+
+template.add()
+
 """
 
 class _BaseIndexer(object):
