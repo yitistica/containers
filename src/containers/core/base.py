@@ -17,7 +17,7 @@ class Key(Element):
     pass
 
 
-class UnmutableKey(Key):
+class ImmutableKey(Key):
     def __hash__(self):
         return hash(self._value)
 
@@ -68,3 +68,25 @@ class Item(object):
     @property
     def value(self):
         return self._get_value()
+
+
+class Index(object):
+    def __init__(self):
+        self._index = 0
+
+    def gen_index(self):
+        self._index += 1
+        return self._index
+    
+
+
+class Mapper(object):
+    def __init__(self, ):
+
+        self._max_index = -1
+
+    def gen_index(self):
+        self._max_index += 1
+
+
+    def add_item(self, item):
