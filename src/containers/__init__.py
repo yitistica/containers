@@ -8,6 +8,8 @@ form like a data model, then you can inherit then use it as a dict;
 implement attribute dictionary with search filter;
 default value
 attribute,
+
+data type: category: init additional mapping;
 """
 
 __author__ = """Yi Q"""
