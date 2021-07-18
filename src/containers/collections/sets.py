@@ -1,9 +1,10 @@
-from containers.core.base import BaseSequence, BaseSet
+from containers.core.base import FrozenSequence, BaseSequence, BaseSet
+from containers.core.common import reduce
 
 
 class SequenceSet(BaseSequence, BaseSet):
     def __init__(self, iterable=()):
-        BaseSequence.__init__(self, sequence=iterable)
+        BaseSequence.__init__(self, iterable=iterable)
 
     def which(self, value):
         index = None
@@ -36,5 +37,7 @@ class OrderedSet(SequenceSet):
     """
 
 
-class OrderFrozenSet(object):
-    pass
+class OrderedFrozenSet(FrozenSequence):
+    def __init__(self, iterable=()):
+        iterable = reduce(iterable)
+        super().__init__(iterable=reduce(iterable))

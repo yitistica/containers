@@ -1,4 +1,4 @@
-from collections.abc import MutableMapping, MutableSequence, MutableSet, Set
+from collections.abc import MutableMapping, Sequence, MutableSequence, MutableSet, Set
 
 
 class BaseMixin:
@@ -6,10 +6,24 @@ class BaseMixin:
         return f"{self.__class__.__name__}({self.__str__()})"
 
 
+class FrozenSequence(Sequence, BaseMixin):
+    def __init__(self, iterable=()):
+        self._tuple = tuple(iterable)
+
+    def __getitem__(self, index):
+        return self._tuple[index]
+
+    def __len__(self):
+        return len(self._tuple)
+
+    def __str__(self):
+        return str(self._tuple)
+
+
 class BaseSequence(MutableSequence, BaseMixin):
-    def __init__(self, sequence=()):
+    def __init__(self, iterable=()):
         self._list = list()
-        self.extend(sequence)
+        self.extend(iterable)  # a loop that uses append, which uses insert method;
 
     def _get_item(self, index):
         return self._list[index]
@@ -43,19 +57,19 @@ class BaseSequence(MutableSequence, BaseMixin):
 
 
 class SetMixin:
-    def union(self, iterables=()):
-        return self | iterables
+    def union(self, iterable=()):
+        return self | iterable
 
-    def intersection(self, iterables=()):
-        return self & iterables
+    def intersection(self, iterable=()):
+        return self & iterable
 
-    def difference(self, iterables=()):
-        return self - iterables
+    def difference(self, iterable=()):
+        return self - iterable
 
 
 class BaseFrozenSet(Set, SetMixin, BaseMixin):
-    def __init__(self, set_=()):
-        self._set = frozenset(set_)
+    def __init__(self, iterable=()):
+        self._set = frozenset(iterable)
 
     def __contains__(self, element):
         return element in self._set
@@ -71,9 +85,9 @@ class BaseFrozenSet(Set, SetMixin, BaseMixin):
 
 
 class BaseSet(MutableSet, SetMixin, BaseMixin):
-    def __init__(self, set_=()):
+    def __init__(self, iterable=()):
         self._set = set()
-        self.update(set_)
+        self.update(iterable)
 
     def _add(self, element):
         self._set.add(element)
@@ -81,8 +95,8 @@ class BaseSet(MutableSet, SetMixin, BaseMixin):
     def add(self, element):
         self._add(element)
 
-    def update(self, set_):
-        for element in set_:
+    def update(self, iterable):
+        for element in iterable:
             self.add(element)
 
     def _discard(self, element):
@@ -105,9 +119,9 @@ class BaseSet(MutableSet, SetMixin, BaseMixin):
 
 
 class BaseMap(MutableMapping, BaseMixin):
-    def __init__(self, items=()):
+    def __init__(self, iterable=()):
         self._mapping = dict()
-        self.update(items)
+        self.update(iterable)
 
     def _get_item(self, key):
         return self._mapping[key]
@@ -138,5 +152,3 @@ class BaseMap(MutableMapping, BaseMixin):
 
     def __str__(self):
         return str(self._mapping)
-
-
