@@ -4,30 +4,74 @@ from containers.core.base import BaseMap
 from containers.collections.sets import OrderedSet
 
 
-class _CommonView:
+class _CommonOrderedMapView:
     @classmethod
     def _from_iterable(cls, it):
         return OrderedSet(it)
 
 
-class OrderedItemsView(ItemsView, _CommonView):
+class OrderedItemsView(ItemsView, _CommonOrderedMapView):
 
     def __iter__(self):
         for key in self._mapping._ordered_key:
             yield (key, self._mapping[key])
 
 
-class OrderedKeysView(KeysView, _CommonView):
+class OrderedKeysView(KeysView, _CommonOrderedMapView):
 
     def __iter__(self):
         yield from self._mapping._ordered_key
 
 
-class OrderedValuesView(ValuesView, _CommonView):
+class OrderedValuesView(ValuesView, _CommonOrderedMapView):
 
     def __iter__(self):
         for key in self._mapping._ordered_key:
             yield self._mapping[key]
+
+
+class LocateView(object):
+    def __init__(self, mapping):
+        self._mapping = mapping
+
+    def _get_item_from_tuple(self, item_tuple):
+        cur = self._mapping
+        for item in item_tuple:
+            try:
+                cur = cur[item]
+            except KeyError:
+                return False, None
+
+        return True, cur
+
+    def _delete_item_from_tuple(self, item_tuple):
+        cur = self._mapping
+        _parent = None
+        for index, item in enumerate(item_tuple):
+            if item not in cur:
+                return False
+            elif index == (len(item_tuple)-1):
+                del cur[item]
+            else:
+                cur = cur[item]
+
+        return True
+
+    def __getitem__(self, item):
+        if_exist, value = self._get_item_from_tuple((item,))  # check if the item exists first;
+
+        if (not if_exist) and isinstance(item, tuple):
+            if_exist, value = self._get_item_from_tuple(item)
+
+        return if_exist, value
+
+    def __delitem__(self, item):
+        if_exist = self._delete_item_from_tuple((item,))  # check if the item exists first;
+
+        if (not if_exist) and isinstance(item, tuple):
+            if_exist = self._delete_item_from_tuple(item)
+
+        return if_exist
 
 
 class OrderedDict(BaseMap):
@@ -66,10 +110,7 @@ class LaissezDict(BaseMap):
     def __init__(self, iterable):
         super().__init__(iterable=iterable)
 
-    def _get_exist_item(self, key):
-        if key not in self._mapping:
-            exist = False
-        else:
-            exist = True
+    @property
+    def loc(self):
+        return LocateView(mapping=self)
 
-        return exist, self._mapping.get(key)
