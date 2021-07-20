@@ -30,7 +30,7 @@ class OrderedValuesView(ValuesView, _CommonOrderedMapView):
             yield self._mapping[key]
 
 
-class LocateView(object):
+class GetLocateView(object):
     def __init__(self, mapping):
         self._mapping = mapping
 
@@ -70,11 +70,43 @@ class LocateView(object):
 
         return True
 
-    def __getitem__(self, item):
+    def _get_if_exists(self, item):
         if_exist, value = self._get_item_from_tuple((item,))  # check if the item exists first;
 
         if (not if_exist) and isinstance(item, tuple):
             if_exist, value = self._get_item_from_tuple(item)
+
+        return if_exist, value
+
+    def _set_if_exists(self, item, value):
+        if_exist = self._set_item_from_tuple((item,), value)
+
+        if (not if_exist) and isinstance(item, tuple):
+            if_exist = self._set_item_from_tuple(item, value)
+
+        return if_exist
+
+    def _delete_if_exists(self, item):
+        if_exist = self._delete_item_from_tuple((item,))
+
+        if (not if_exist) and isinstance(item, tuple):
+            if_exist = self._delete_item_from_tuple(item)
+
+        return if_exist
+
+    def __getitem__(self, item):
+        return self._get_if_exists(item=item)
+
+    def __setitem__(self, item, value):
+        self._set_if_exists(item=item, value=value)
+
+    def __delitem__(self, item):
+        self._delete_if_exists(item=item)
+
+
+class LocateView(GetLocateView):
+    def __getitem__(self, item):
+        if_exist, value = self._get_if_exists(item=item)
 
         if not if_exist:
             raise KeyError(f"keys {item} does not exist.")
@@ -82,19 +114,13 @@ class LocateView(object):
         return value
 
     def __setitem__(self, item, value):
-        if_exist = self._set_item_from_tuple((item,), value)
-
-        if (not if_exist) and isinstance(item, tuple):
-            if_exist = self._set_item_from_tuple(item, value)
+        if_exist, value = self._set_if_exists(item=item, value=value)
 
         if not if_exist:
             raise KeyError(f"keys {item} does not exist.")
 
     def __delitem__(self, item):
-        if_exist = self._delete_item_from_tuple((item,))
-
-        if (not if_exist) and isinstance(item, tuple):
-            if_exist = self._delete_item_from_tuple(item)
+        if_exist = self._delete_if_exists(item)
 
         if not if_exist:
             raise KeyError(f"keys {item} does not exist.")
@@ -139,3 +165,7 @@ class LaissezDict(BaseMap):
     @property
     def loc(self):
         return LocateView(mapping=self)
+
+    @property
+    def get_loc(self):
+        return GetLocateView(mapping=self)
