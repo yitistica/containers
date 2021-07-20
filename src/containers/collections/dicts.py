@@ -30,6 +30,38 @@ class OrderedValuesView(ValuesView, _CommonOrderedMapView):
             yield self._mapping[key]
 
 
+class OrderedDict(BaseMap):
+    def __init__(self, iterable=()):
+        self._ordered_key = OrderedSet()
+        super().__init__(iterable=iterable)
+
+    def _get_item(self, key):
+        return self._mapping[key]
+
+    def _set_item(self, key, value):
+        if key in self._ordered_key:
+            self._mapping[key] = value
+        else:
+            self._ordered_key.add(key)
+            self._mapping[key] = value
+
+    def _delete_item(self, key):
+        del self._mapping[key]
+        self._ordered_key.discard(key)
+
+    def __iter__(self):
+        return iter(self._ordered_key)
+
+    def items(self):
+        return OrderedItemsView(self)
+
+    def keys(self):
+        return OrderedKeysView(self)
+
+    def values(self):
+        return OrderedValuesView(self)
+
+
 class GetLocateView(object):
     def __init__(self, mapping):
         self._mapping = mapping
@@ -124,38 +156,6 @@ class LocateView(GetLocateView):
 
         if not if_exist:
             raise KeyError(f"keys {item} does not exist.")
-
-
-class OrderedDict(BaseMap):
-    def __init__(self, iterable=()):
-        self._ordered_key = OrderedSet()
-        super().__init__(iterable=iterable)
-
-    def _get_item(self, key):
-        return self._mapping[key]
-
-    def _set_item(self, key, value):
-        if key in self._ordered_key:
-            self._mapping[key] = value
-        else:
-            self._ordered_key.add(key)
-            self._mapping[key] = value
-
-    def _delete_item(self, key):
-        del self._mapping[key]
-        self._ordered_key.discard(key)
-
-    def __iter__(self):
-        return iter(self._ordered_key)
-
-    def items(self):
-        return OrderedItemsView(self)
-
-    def keys(self):
-        return OrderedKeysView(self)
-
-    def values(self):
-        return OrderedValuesView(self)
 
 
 class LaissezDict(BaseMap):
