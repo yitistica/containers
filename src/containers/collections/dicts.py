@@ -44,6 +44,19 @@ class LocateView(object):
 
         return True, cur
 
+    def _set_item_from_tuple(self, item_tuple, value):
+        cur = self._mapping
+        _parent = None
+        for index, item in enumerate(item_tuple):
+            if item not in cur:
+                return
+            elif index == (len(item_tuple)-1):
+                cur[item] = value
+            else:
+                cur = cur[item]
+
+        return True
+
     def _delete_item_from_tuple(self, item_tuple):
         cur = self._mapping
         _parent = None
@@ -63,15 +76,28 @@ class LocateView(object):
         if (not if_exist) and isinstance(item, tuple):
             if_exist, value = self._get_item_from_tuple(item)
 
-        return if_exist, value
+        if not if_exist:
+            raise KeyError(f"keys {item} does not exist.")
+
+        return value
+
+    def __setitem__(self, item, value):
+        if_exist = self._set_item_from_tuple((item,), value)
+
+        if (not if_exist) and isinstance(item, tuple):
+            if_exist = self._set_item_from_tuple(item, value)
+
+        if not if_exist:
+            raise KeyError(f"keys {item} does not exist.")
 
     def __delitem__(self, item):
-        if_exist = self._delete_item_from_tuple((item,))  # check if the item exists first;
+        if_exist = self._delete_item_from_tuple((item,))
 
         if (not if_exist) and isinstance(item, tuple):
             if_exist = self._delete_item_from_tuple(item)
 
-        return if_exist
+        if not if_exist:
+            raise KeyError(f"keys {item} does not exist.")
 
 
 class OrderedDict(BaseMap):
@@ -113,4 +139,3 @@ class LaissezDict(BaseMap):
     @property
     def loc(self):
         return LocateView(mapping=self)
-
