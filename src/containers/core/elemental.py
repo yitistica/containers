@@ -6,6 +6,10 @@ class Element:
     def _set_value(self, value):
         self._value = value
 
+    @property
+    def value(self):
+        return self._value
+
     def __str__(self):
         return str(self._value)
 
@@ -18,8 +22,19 @@ class Key(Element):
 
 
 class ImmutableKey(Key):
+    def __init__(self, value):
+        hash(value)
+        super().__init__(value=value)
+
     def __hash__(self):
         return hash(self._value)
+
+
+class StrKey(ImmutableKey):
+    def __init__(self, value):
+        if not isinstance(value, str):
+            raise TypeError(f'{value} is not a str.')
+        super().__init__(value)
 
 
 class Value(Element):

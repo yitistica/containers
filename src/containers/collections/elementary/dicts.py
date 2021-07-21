@@ -1,7 +1,12 @@
 from collections.abc import ItemsView, KeysView, ValuesView
 
 from containers.core.base import BaseMap
-from containers.collections.sets import OrderedSet
+from containers.collections.elementary.sets import OrderedSet
+
+
+class Dict(BaseMap):
+    def __init__(self, iterable):
+        super().__init__(iterable=iterable)
 
 
 class _CommonOrderedMapView:
@@ -30,7 +35,7 @@ class OrderedValuesView(ValuesView, _CommonOrderedMapView):
             yield self._mapping[key]
 
 
-class OrderedDict(BaseMap):
+class OrderedDict(Dict):
     def __init__(self, iterable=()):
         self._ordered_key = OrderedSet()
         super().__init__(iterable=iterable)
@@ -158,7 +163,7 @@ class LocateView(GetLocateView):
             raise KeyError(f"keys {item} does not exist.")
 
 
-class LaissezDict(BaseMap):
+class LaissezDict(Dict):
     def __init__(self, iterable):
         super().__init__(iterable=iterable)
 

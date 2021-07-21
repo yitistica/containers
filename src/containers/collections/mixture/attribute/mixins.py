@@ -1,4 +1,7 @@
-from containers.core.base import BaseMap
+
+class GetAttrMixin(object):
+    def __getattr__(self, field):
+        return self._get_item(field)
 
 
 class ObjectAttributeOccupiedError(Exception):  # TEMP
@@ -34,7 +37,7 @@ class ImmutableFieldMixin(object):
         return self._immutable_fields
 
     def _check_immutable(self, field):
-        if (field in self._immutable_fields) and (field in self.attris):
+        if (field in self._immutable_fields) and (field in self.attrs):
             raise ImmutableFieldError(field)
 
 
@@ -45,7 +48,7 @@ class NotNullFieldMixin(object):
         self._not_null_fields = fields
 
     def _check_exist(self, field):
-        if not ((field in self._not_null_fields) and (field in self.attris)):
+        if not ((field in self._not_null_fields) and (field in self.attrs)):
             raise FieldNotExistError(field)
 
     def _check_null(self, field, null_forms=None):
@@ -54,6 +57,6 @@ class NotNullFieldMixin(object):
         if (not null_forms) and isinstance(null_forms, (list, set, tuple)):
             raise TypeError(f"null forms <{null_forms}> is empty or not a list, set or tuple.")
 
-        value = self.attris.get(field)
+        value = self.attrs.get(field)
         if value in null_forms:
             raise NullFieldError(field=field, value=value)
