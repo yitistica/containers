@@ -1,6 +1,5 @@
 from containers.core.base import BaseMap
 from containers.core.elemental import ImmutableKey, Value
-from dataclasses import dataclass
 
 
 class AttrKey(ImmutableKey):

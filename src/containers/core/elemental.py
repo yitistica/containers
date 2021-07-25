@@ -1,9 +1,9 @@
 
-class Element:
+class Element(object):
     def __init__(self, value):
-        self._set_value(value)
+        self._set(value)
 
-    def _set_value(self, value):
+    def _set(self, value):
         self._value = value
 
     @property
@@ -83,3 +83,4 @@ class Item(object):
     @property
     def value(self):
         return self._get_value()
+
