@@ -20,44 +20,68 @@ class CategorySequence(BaseSequence):
         self._list[index] = value
 
 
-class RecursiveIterView(object):
+class IterView(object):
 
-    def __init__(self, iterable, from_=None, to_=None, step=1, max_loop=None, max_step=None):
+    def __init__(self, iterable, from_=None, to_=None, step=1, max_loop=1, max_step=None, restart=False):
         self._iterable = iterable
-        self._size = len(self._iterable)
+        self._size = None  # subset size;
 
-        self._from, self._to = self._parse_range(from_=from_, to_=to_)
+        self._from, self._to, self._step = self._parse_range(from_=from_, to_=to_, step=step)
 
         self._current_step = 0
         self._current_loop = 0
         self._max_step = max_step
         self._max_loop = max_loop
 
-    def _parse_range(self, from_, to_):
+    def _parse_range(self, from_, to_, step):
+
+        _iterable_size = len(self._iterable)
+
         if not from_:
             from_ = 0
+        elif (-_iterable_size) <= from_ < 0:
+            from_ = _iterable_size + from_
+        else:
+            raise IndexError(f"index {from_} out of range")
 
         if not to_:
-            to_ = self._size
+            to_ = _iterable_size
+        elif (-_iterable_size) <= to_ < 0:
+            to_ = _iterable_size + to_
+        else:
+            raise IndexError(f"index {from_} out of range")
 
-        if from_ < 0:
-            from_ = self._size + from_
+        if not step:
+            step = 1
 
-        if to_ < 0:
-            to_ = self._size + to_
+        assert isinstance(from_, int)
+        assert isinstance(to_, int)
+        assert isinstance(step, int)
 
-        return from_, to_
+        if from_ > to_:
+            raise ValueError(f"from_ position is greater than to_ position, "
+                             f"use step < 0 to set reverse order.")
+        else:
+            self._size = to_ - from_
+
+        return from_, to_, step
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        self.current += 1
-        if self.current < self.high:
-            return self.current
+
+        if self._max_step and (self._current_step >= self._max_step):
+            raise StopIteration
+
+        if self._max_loop and (self._current_loop >= self._max_loop):
+            raise StopIteration
+
+        # self._current_step //
+
         raise StopIteration
 
-
+        return
 
 
 class StatisticsView(object):
@@ -96,6 +120,12 @@ class XList(BaseSequence):
         return None
 
 
-a = RecursiveIterView(list([1,2,3,4,5,6]), to_=-1)
+# a = IterView(list([1, 2, 3, 4, 5, 6]), to_=-1)
 
-print(a._to)
+a = [1,2,3, 4, 5]
+
+print(a[0:1])
+
+
+
+
