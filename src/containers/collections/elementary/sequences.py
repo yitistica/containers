@@ -142,6 +142,7 @@ class IterView(object):
         else:
             next_step = self._step
 
+        self._current_leap += 1
         self._current_step += next_step
 
         return value
