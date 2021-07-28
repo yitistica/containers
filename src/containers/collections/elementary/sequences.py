@@ -22,14 +22,14 @@ class CategorySequence(BaseSequence):
 
 class IterView(object):
 
-    def __init__(self, iterable, from_=None, to_=None, step=1, max_loop=1, max_step=None, restart=False):
+    def __init__(self, iterable, from_=None, to_=None, step=1, max_loop=1, max_step=None, restart_loop=False):
         self._iterable = iterable
         self._size = None  # subset size;
 
         self._from, self._to, self._step = self._parse_range(from_=from_, to_=to_, step=step)
+        self._restart = restart_loop
 
         self._current_step = 0
-        self._current_loop = 0
         self._max_step = max_step
         self._max_loop = max_loop
 
@@ -37,21 +37,25 @@ class IterView(object):
 
         _iterable_size = len(self._iterable)
 
-        if not from_:
+        if from_ is None:
             from_ = 0
+        elif 0 <= from_ < _iterable_size:
+            pass
         elif (-_iterable_size) <= from_ < 0:
             from_ = _iterable_size + from_
         else:
             raise IndexError(f"index {from_} out of range")
 
-        if not to_:
+        if to_ is None:
             to_ = _iterable_size
+        elif 0 <= to_ < _iterable_size:
+            pass
         elif (-_iterable_size) <= to_ < 0:
             to_ = _iterable_size + to_
         else:
             raise IndexError(f"index {from_} out of range")
 
-        if not step:
+        if step is not None:
             step = 1
 
         assert isinstance(from_, int)
@@ -71,17 +75,25 @@ class IterView(object):
 
     def __next__(self):
 
-        if self._max_step and (self._current_step >= self._max_step):
+        if (self._max_step is not None) and (self._current_step >= self._max_step):
             raise StopIteration
 
-        if self._max_loop and (self._current_loop >= self._max_loop):
+        current_loop, step_in_loop = divmod(self._current_step, self._size)
+
+        if (self._max_loop is not None) and (current_loop >= self._max_loop):
             raise StopIteration
 
-        # self._current_step //
+        if self._restart and (step_in_loop < self._step):
+            step_in_loop = 0
+            increment = (self._step - step_in_loop)
+        else:
+            increment = self._step
 
-        raise StopIteration
+        self._current_step += increment
 
-        return
+        pos = self._from + step_in_loop
+
+        return self._iterable[pos]
 
 
 class StatisticsView(object):
@@ -116,16 +128,7 @@ class RandomView(object):
 
 class XList(BaseSequence):
 
-    def repeat(self, from_=None, to_=None):
-        return None
-
-
-# a = IterView(list([1, 2, 3, 4, 5, 6]), to_=-1)
-
-a = [1,2,3, 4, 5]
-
-print(a[0:1])
-
-
-
+    def range(self, from_=None, to_=None, step=1, max_loop=1, max_step=None, restart_loop=False):
+        return IterView(self._list, from_=from_, to_=to_, step=step,
+                        max_loop=max_loop, max_step=max_step, restart_loop=restart_loop)
 
