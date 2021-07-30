@@ -2,8 +2,6 @@
 with dict.efilter(filter=True) as  filter, k, v:
     condtion_1 = lambda x: x > 2
     a = filter(conditon, select=)
-
-slice(
 """
 from typing import Any
 from collections.abc import Iterable
@@ -34,16 +32,6 @@ class SliceIter(object):
             current_step = self._current_step
             self._current_step += self._step
             return current_step
-
-
-def mix_slice_index_generator(indices, size):
-    for index in indices:
-        if isinstance(index, slice):
-            _slice_iter = SliceIter(index, size=size)
-            for sub_index in _slice_iter:
-                yield sub_index
-        else:
-            yield index
 
 
 class MixedSliceIndexIter(object):
@@ -94,27 +82,19 @@ class IndexLocateView(object):
 
         return subsequence
 
-    def _set_by_index(self, index, values):
+    def _set_by_index(self, index, value):
         """
         Make sure index to value is 1-to-1, e.g., confusion arises when a slice is mapped with a single value.
         :param index: int, or slice.
         :param value: Any or Iterable, in the case of slice, an iterable should be given.
         :return:
         """
-        if isinstance(index, slice):
-            for _index in range(*index.indices(len(self._iterable))):
-                pass
-        self._iterable[index] = values
+        self._iterable[index] = value
 
     def _set_by_indices(self, indices, values):
-
-        if isinstance(indices, (int, slice)):
-            self._iterable[indices] = values
-        elif isinstance(indices, tuple):  # multiple;
-            for index in indices:
-                self._iterable[index] = values
-        else:
-            raise TypeError(f"indices/index {indices} is not a valid index.")
+        indices_inter = MixedSliceIndexIter(indices=indices, size=self._size)
+        for which, index in enumerate(indices_inter):
+            self._set_by_index(index, values[which])
 
     def __getitem__(self, indices):
         values = self._get_by_indices(indices=indices)
@@ -123,8 +103,14 @@ class IndexLocateView(object):
     def __setitem__(self, indices, values):
         self._set_by_indices(indices=indices, values=values)
 
-    def __delitem__(self, item):
-        pass
+    def _delete_by_index(self, index):
+        del self._iterable[index]
+
+    def __delitem__(self, indices):
+        indices = list(set(MixedSliceIndexIter(indices=indices, size=self._size)))
+        indices.sort(reverse=True)
+        for index in indices:
+            self._delete_by_index(index=index)
 
 
 class IterView(object):
