@@ -1,5 +1,5 @@
 from containers.core.base import BaseSequence, BaseSet, BaseFrozenSet
-from containers.collections.elementary.common import ElementView, IterView, DictMapView, ApplyView
+from containers.collections.elementary.common import ElementView, IterView, IndexLocateView, DictMapView, ApplyView
 
 
 class InvalidCategoryValueError(Exception):
@@ -45,3 +45,7 @@ class XList(BaseSequence):
             return ApplyView(iterable=self._list, mapping=mapping)
         else:
             TypeError(f"mapping {type(mapping)} is not supported.")
+
+    @property
+    def iloc(self):
+        return IndexLocateView(iterable=self._list)
