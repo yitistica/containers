@@ -9,15 +9,58 @@ from typing import Any
 from collections.abc import Iterable
 
 
-class MixedSlices(object):
-    def __init__(self, mix_slices=()):
-        self._mix_slices = mix_slices
+class SliceIter(object):
+    def __init__(self, slice_, size):
+        assert isinstance(slice_, slice)
+        self._slice = slice_
+        assert isinstance(size, int) and (size >= 0)
+        self._size = size
+        self._from, self._to, self._step = self._parse_slice(slice_=slice_, size=size)
+
+        self._current_step = self._from
+
+    @staticmethod
+    def _parse_slice(slice_, size):
+        start, stop, step = slice_.indices(size)
+        return start, stop, step
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        pass
+        if self._current_step >= self._to:
+            raise StopIteration
+        else:
+            current_step = self._current_step
+            self._current_step += self._step
+            return current_step
+
+
+def mix_slice_index_generator(indices, size):
+    for index in indices:
+        if isinstance(index, slice):
+            _slice_iter = SliceIter(index, size=size)
+            for sub_index in _slice_iter:
+                yield sub_index
+        else:
+            yield index
+
+
+class MixedSliceIndexIter(object):
+    def __init__(self, indices, size):
+        self._indices = indices
+
+        assert isinstance(size, int) and (size >= 0)
+        self._size = size
+
+    def __iter__(self):
+        for index in self._indices:
+            if isinstance(index, slice):
+                _slice_iter = SliceIter(index, size=self._size)
+                for sub_index in _slice_iter:
+                    yield sub_index
+            else:
+                yield index
 
 
 class IndexLocateView(object):
@@ -298,7 +341,3 @@ class Rolling(object):
         pass
 
 
-a = IndexLocateView([1,2, 3, 4,5])
-
-for index, value in enumerate(range(2,10)):
-    print(index, value)
