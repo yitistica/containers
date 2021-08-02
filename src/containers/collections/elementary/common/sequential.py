@@ -1,10 +1,4 @@
-"""
-with dict.efilter(filter=True) as  filter, k, v:
-    condtion_1 = lambda x: x > 2
-    a = filter(conditon, select=)
-"""
 from typing import Any
-from collections.abc import Iterable
 
 
 class SliceIter(object):
@@ -62,25 +56,25 @@ class IndexLocateView(object):
 
     def _get_by_index(self, index):
         if isinstance(index, int):
-            subsequence = [self._iterable[index]]
+            sub_sequence = [self._iterable[index]]
         elif isinstance(index, slice):
-            subsequence = self._iterable[index]
+            sub_sequence = self._iterable[index]
         else:
             raise TypeError(f"index {index} is not a valid index.")
 
-        return self._construct_iterable(iterable=subsequence)
+        return self._construct_iterable(iterable=sub_sequence)
 
     def _get_by_indices(self, indices):
-        subsequence = self._construct_iterable(iterable=())
+        sub_sequence = self._construct_iterable(iterable=())
         if isinstance(indices, (int, slice)):
-            subsequence += self._get_by_index(index=indices)
+            sub_sequence += self._get_by_index(index=indices)
         elif isinstance(indices, tuple):  # multiple;
             for index in indices:
-                subsequence += self._get_by_index(index=index)
+                sub_sequence += self._get_by_index(index=index)
         else:
             raise TypeError(f"indices/index {indices} is not a valid index.")
 
-        return subsequence
+        return sub_sequence
 
     def _set_by_index(self, index, value):
         """
@@ -113,7 +107,7 @@ class IndexLocateView(object):
             self._delete_by_index(index=index)
 
 
-class IterView(object):
+class IterIndexView(object):
 
     def __init__(self, iterable, from_=None, to_=None, step=1,
                  max_step=-1, max_cycle=None, max_leap=None, restart=False):
@@ -245,8 +239,8 @@ class IterView(object):
 
 class IterViewByComposition(object):
     def __init__(self, iterable):
-        self._iterator = IterView(iterable, from_=None, to_=None, step=1,
-                                  max_step=-1, max_cycle=None, max_leap=None, restart=False)
+        self._iterator = IterIndexView(iterable, from_=None, to_=None, step=1,
+                                       max_step=-1, max_cycle=None, max_leap=None, restart=False)
 
     def __iter__(self):
         return self
@@ -295,6 +289,7 @@ class ApplyView(IterViewByComposition):
         return index, self._map(value=value)
 
 
+
 class BoolFilterView(ApplyView):
     """only for """
     pass
@@ -325,5 +320,3 @@ class EFilterView(object):
 class Rolling(object):
     def __init__(self):
         pass
-
-
