@@ -289,7 +289,6 @@ class ApplyView(IterViewByComposition):
         return index, self._map(value=value)
 
 
-
 class BoolFilterView(ApplyView):
     """only for """
     pass

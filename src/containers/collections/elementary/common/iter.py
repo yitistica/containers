@@ -1,22 +1,25 @@
+"""
 
+difference: mutability, uniqueness, order,
+"""
 
 _ITERABLE_ATTR_NAMES = ['_iterable', 'iterable', '_list']
 
 
-def _check_contain_iterable(self):
-    contained = False
-
-    for attr_name in _ITERABLE_ATTR_NAMES:
-        if hasattr(self, attr_name):
-            return attr_name
-
-    if not contained:
-        raise AttributeError(f"obj {self} does not contain an iterable "
-                             f"as an attribute named one of {_ITERABLE_ATTR_NAMES}.")
+def _check_contain_iterable(self, iterable_attr_name):
+    return hasattr(self, iterable_attr_name)
 
 
 class IterBase(object):
+    _iterable_attr_name = '_iterable'
 
     def __init__(self):
-        self.__iterable = _check_contain_iterable(self)
+        assert _check_contain_iterable(self, iterable_attr_name=self._iterable_attr_name)
+
+    @property
+    def iterable(self):
+        return getattr(self, self._iterable_attr_name)
+
+    def __iter__(self):
+        return self
 
