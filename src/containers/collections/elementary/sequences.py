@@ -1,4 +1,4 @@
-from containers.collections.elementary.common.sequential import IterIndexView, IndexLocateView, DictMapView, ApplyView
+from containers.collections.elementary.views.sequential import IterIndexView, IndexLocateView, DictMapView, ApplyView
 from containers.core.base import BaseSequence
 
 
@@ -48,7 +48,7 @@ class XList(BaseSequence):
 
     @property
     def iloc(self):
-        return IndexLocateView(iterable=self._list)
+        return IndexLocateView(sequence=self._list)
 
     def freeze(self):
         pass

@@ -1,53 +1,27 @@
+"""
+
+sequential: index, index is generated;
+
+composition-wise setting;
+
+
+"""
 from typing import Any
 
-
-class SliceIter(object):
-    def __init__(self, slice_, size):
-        assert isinstance(slice_, slice)
-        self._slice = slice_
-        assert isinstance(size, int) and (size >= 0)
-        self._size = size
-        self._from, self._to, self._step = self._parse_slice(slice_=slice_, size=size)
-
-        self._current_step = self._from
-
-    @staticmethod
-    def _parse_slice(slice_, size):
-        start, stop, step = slice_.indices(size)
-        return start, stop, step
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self._current_step >= self._to:
-            raise StopIteration
-        else:
-            current_step = self._current_step
-            self._current_step += self._step
-            return current_step
+from containers.collections.elementary.views.base import IterView
+from containers.collections.elementary.common.iterators import MixedSliceIndexIter
 
 
-class MixedSliceIndexIter(object):
-    def __init__(self, indices, size):
-        self._indices = indices
+class SequentialIterableBaseView(IterView):
+    def __init__(self, sequence=()):
+        super().__init__(iterable=sequence)
 
-        assert isinstance(size, int) and (size >= 0)
-        self._size = size
 
-    def __iter__(self):
-        for index in self._indices:
-            if isinstance(index, slice):
-                _slice_iter = SliceIter(index, size=self._size)
-                for sub_index in _slice_iter:
-                    yield sub_index
-            else:
-                yield index
 
 
 class IndexLocateView(object):
-    def __init__(self, iterable):
-        self._iterable = iterable
+    def __init__(self, sequence):
+        self._iterable = sequence
 
         self._size = len(self._iterable)
 
