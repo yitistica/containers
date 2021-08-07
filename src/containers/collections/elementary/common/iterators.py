@@ -6,8 +6,6 @@ class IndexIterable(object):
         self._size = size
 
 
-
-
 class SliceIter(object):
     def __init__(self, slice_, size):
         assert isinstance(slice_, slice)

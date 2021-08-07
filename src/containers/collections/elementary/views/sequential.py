@@ -5,18 +5,23 @@ sequential: index, index is generated;
 composition-wise setting;
 
 
+view:
+    retrieve view;
+
 """
 from typing import Any
 
-from containers.collections.elementary.views.base import IterView
+from containers.collections.elementary.views.base import Iterable
 from containers.collections.elementary.common.iterators import MixedSliceIndexIter
 
 
-class SequentialIterableBaseView(IterView):
+class SequenceViewBase(Iterable):
     def __init__(self, sequence=()):
         super().__init__(iterable=sequence)
 
-
+    @property
+    def size(self):
+        return len(self.iterable)
 
 
 class IndexLocateView(object):
@@ -81,14 +86,21 @@ class IndexLocateView(object):
             self._delete_by_index(index=index)
 
 
-class IterIndexView(object):
+"""
+IndexViewBase
+"""
 
-    def __init__(self, iterable, from_=None, to_=None, step=1,
+
+class IndexIterator(object):
+
+    def __init__(self, iterable_size, from_=None, to_=None, step=1,
                  max_step=-1, max_cycle=None, max_leap=None, restart=False):
-        self._iterable = iterable
+
+        assert (isinstance(iterable_size, int) and (iterable_size >=0))
+        self._iterable_size = iterable_size
 
         if max_step == -1:
-            max_step = len(self._iterable) - 1
+            max_step = iterable_size - 1
         elif max_step:
             assert (isinstance(max_step, int) and max_step >= 0)
         self._max_step = max_step
@@ -114,7 +126,7 @@ class IterIndexView(object):
 
     def _parse_range_args(self, from_, to_, step):
 
-        _iterable_size = len(self._iterable)
+        _iterable_size = self._iterable_size
 
         # range:
         if from_ is None:
@@ -179,21 +191,20 @@ class IterIndexView(object):
             ltr_pos = cycle_pos
 
         index = self._from + ltr_pos
-        value = self._iterable[index]
-        return cycles, cycle_pos, ltr_pos, index, value
+
+        return cycles, cycle_pos, ltr_pos, index
 
     def __iter__(self):
         return self
 
     def __next__(self):
-
         if (self._max_leap is not None) and (self._current_leap > self._max_leap):
             raise StopIteration
 
         if (self._max_step is not None) and (self._current_step > self._max_step):
             raise StopIteration
 
-        cycles, cycle_pos, ltr_pos, index, value = self._convert_step_to_pos(self._current_step)
+        cycles, cycle_pos, ltr_pos, index = self._convert_step_to_pos(self._current_step)
 
         if (self._max_cycle is not None) and (cycles > self._max_cycle):
             raise StopIteration
@@ -208,26 +219,47 @@ class IterIndexView(object):
         self._current_leap += 1
         self._current_step += next_step
 
-        return index, value
+        return index
 
 
-class IterViewByComposition(object):
-    def __init__(self, iterable):
-        self._iterator = IterIndexView(iterable, from_=None, to_=None, step=1,
-                                       max_step=-1, max_cycle=None, max_leap=None, restart=False)
+class IterIndexView(SequenceViewBase):
+    def __init__(self, iterable=(), **kwargs):
+
+        super().__init__(sequence=iterable)
+        self._iterator = IndexIterator(self.size, **kwargs)
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        return self._iterator.__next__()
+        index = self._iterator.__next__()
+        return index, self.iterable[index]
 
 
 class EmptyDefault(object):
     pass
 
 
-class DictMapView(IterViewByComposition):
+class IterIndexMapView(IterIndexView):
+    def __init__(self, mapping, iterable, **kwargs):
+        super().__init__(iterable, **kwargs)
+        assert callable(mapping)
+        self._mapping = mapping
+
+    def _map(self, value):
+        return self._mapping(value)
+
+    def __next__(self):
+        index, value = super().__next__()
+        return index, self._map(value=value)
+
+
+class DictMapper(object):
+    def __init__(self, mapping):
+        assert isinstance(mapping, dict)
+
+
+class IterIndexDictMapView(IterIndexMapView):
     def __init__(self, iterable, mapping, default: Any = EmptyDefault):
         super().__init__(iterable)
         assert isinstance(mapping, dict)
@@ -249,7 +281,7 @@ class DictMapView(IterViewByComposition):
         return index, self._map(value=value)
 
 
-class ApplyView(IterViewByComposition):
+class ApplyView(IndexIteratorbyComposition):
     def __init__(self, iterable, mapping):
         super().__init__(iterable)
         assert callable(mapping)

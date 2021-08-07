@@ -8,7 +8,7 @@ class BaseView(object):
         pass
 
 
-class IterView(BaseView):
+class Iterable(BaseView):
     """
     base view for an iterable
     """

@@ -1,4 +1,4 @@
-from containers.collections.elementary.views.sequential import IterIndexView, IndexLocateView, DictMapView, ApplyView
+from containers.collections.elementary.views.sequential import IndexIterator, IndexLocateView, DictMapView, ApplyView
 from containers.core.base import BaseSequence
 
 
@@ -35,7 +35,7 @@ class RandomView(object):
 class XList(BaseSequence):
 
     def iter(self, from_=None, to_=None, step=1, max_step=-1, max_cycle=None, max_leap=None, restart=False):
-        return IterIndexView(self._list, from_=from_, to_=to_, step=step,
+        return IndexIterator(self._list, from_=from_, to_=to_, step=step,
                              max_step=max_step, max_cycle=max_cycle, max_leap=max_leap, restart=restart)
 
     def map(self, mapping, **kwargs):
