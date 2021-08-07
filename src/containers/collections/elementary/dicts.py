@@ -1,10 +1,10 @@
 from collections.abc import ItemsView, KeysView, ValuesView
 
-from containers.core.base import BaseMap
+from containers.core.base import MutableMappingBase
 from containers.collections.elementary.sets import OrderedSet
 
 
-class Dict(BaseMap):
+class Dict(MutableMappingBase):
     def __init__(self, iterable):
         super().__init__(iterable=iterable)
 

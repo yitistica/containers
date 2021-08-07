@@ -1,10 +1,10 @@
-from containers.core.base import FrozenSequence, BaseSequence, BaseSet
-from containers.core.common import reduce
+from containers.core.base import SequenceBase, MutableSequenceBase, MutableSetBase
+from containers.core.common import remove_repeat
 
 
-class SequenceSet(BaseSequence, BaseSet):
+class SequenceSet(MutableSequenceBase, MutableSetBase):
     def __init__(self, iterable=()):
-        BaseSequence.__init__(self, iterable=iterable)
+        MutableSequenceBase.__init__(self, iterable=iterable)
 
     def which(self, value):
         index = None
@@ -20,7 +20,7 @@ class SequenceSet(BaseSequence, BaseSet):
 
     def insert(self, index, value):
         self._discard(value=value)
-        self._list.insert(index, value)
+        self._iterable.insert(index, value)
 
     def _add(self, element):
         self.append(element)
@@ -37,7 +37,7 @@ class OrderedSet(SequenceSet):
     """
 
 
-class OrderedFrozenSet(FrozenSequence):
+class OrderedFrozenSet(SequenceBase):
     def __init__(self, iterable=()):
-        iterable = reduce(iterable)
-        super().__init__(iterable=reduce(iterable))
+        iterable = remove_repeat(iterable)
+        super().__init__(iterable=remove_repeat(iterable))

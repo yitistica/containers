@@ -1,4 +1,7 @@
-from collections.abc import MutableMapping, Sequence, MutableSequence, MutableSet, Set
+"""
+implementation of set, sequence & mapping by collections.abc.
+"""
+from collections.abc import Mapping, MutableMapping, Sequence, MutableSequence, Set, MutableSet
 
 
 class BaseMixin:
@@ -6,27 +9,39 @@ class BaseMixin:
         return f"{self.__class__.__name__}({self.__str__()})"
 
 
-class FrozenSequence(Sequence, BaseMixin):
+class SequenceBaseMinxin(BaseMixin):
+    pass
+
+
+class MappingBaseMinxin(BaseMixin):
+    pass
+
+
+class SetBaseMinxin(BaseMixin):
+    pass
+
+
+class SequenceBase(Sequence, SequenceBaseMinxin):
     def __init__(self, iterable=()):
-        self._tuple = tuple(iterable)
+        self._iterable = tuple(iterable)
 
     def __getitem__(self, index):
-        return self._tuple[index]
+        return self._iterable[index]
 
     def __len__(self):
-        return len(self._tuple)
+        return len(self._iterable)
 
     def __str__(self):
-        return str(self._tuple)
+        return str(self._iterable)
 
 
-class BaseSequence(MutableSequence, BaseMixin):
+class MutableSequenceBase(MutableSequence, SequenceBaseMinxin):
     def __init__(self, iterable=()):
-        self._list = list()
+        self._iterable = list()
         self.extend(iterable)  # a loop that uses append, which uses insert method;
 
     def _get_item(self, index):
-        return self._list[index]
+        return self._iterable[index]
 
     def __getitem__(self, index):
         return self._get_item(index=index)
@@ -35,28 +50,28 @@ class BaseSequence(MutableSequence, BaseMixin):
         """
         here if key is greater than the max of index,
         """
-        self._list[index] = value
+        self._iterable[index] = value
 
     def __setitem__(self, index, value):
         self._set_item(index=index, value=value)
 
     def _delete_item(self, index):
-        del self._list[index]
+        del self._iterable[index]
 
     def __delitem__(self, index):
         self._delete_item(index)
 
     def __len__(self):
-        return len(self._list)
+        return len(self._iterable)
 
     def insert(self, index, value):
-        self._list.insert(index, value)
+        self._iterable.insert(index, value)
 
     def __str__(self):
-        return str(self._list)
+        return str(self._iterable)
 
 
-class SetMixin:
+class SetMixin(SetBaseMinxin):
     def union(self, iterable=()):
         return self | iterable
 
@@ -67,7 +82,7 @@ class SetMixin:
         return self - iterable
 
 
-class BaseFrozenSet(Set, SetMixin, BaseMixin):
+class SetBase(Set, SetMixin):
     def __init__(self, iterable=()):
         self._set = frozenset(iterable)
 
@@ -84,7 +99,7 @@ class BaseFrozenSet(Set, SetMixin, BaseMixin):
         return str(self._set)
 
 
-class BaseSet(MutableSet, SetMixin, BaseMixin):
+class MutableSetBase(MutableSet, SetMixin):
     def __init__(self, iterable=()):
         self._set = set()
         self.update(iterable)
@@ -118,7 +133,30 @@ class BaseSet(MutableSet, SetMixin, BaseMixin):
         return str(self._set)
 
 
-class BaseMap(MutableMapping, BaseMixin):
+class MappingBase(Mapping, MappingBaseMinxin):
+    def __init__(self, iterable=()):
+        self._mapping = dict(iterable)
+
+    def _get_item(self, key):
+        return self._mapping[key]
+
+    def __getitem__(self, key):
+        return self._get_item(key=key)
+
+    def __iter__(self):
+        return iter(self._mapping)
+
+    def __len__(self):
+        return len(self._mapping)
+
+    def __contains__(self, key):
+        return key in self._mapping
+
+    def __str__(self):
+        return str(self._mapping)
+
+
+class MutableMappingBase(MutableMapping, MappingBaseMinxin):
     def __init__(self, iterable=()):
         self._mapping = dict()
         self.update(iterable)
