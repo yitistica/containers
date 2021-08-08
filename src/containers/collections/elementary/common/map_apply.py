@@ -7,6 +7,10 @@ class EmptyDefault(object):
     pass
 
 
+class MissingKeyError(Exception):
+    pass
+
+
 class Mapper(object):
     pass
 
@@ -26,17 +30,17 @@ class CallableMapper(Mapper):
         return self._mapping(value, **self._params)
 
 
-class _CallableDict(MutableMappingBase):
+class _CallableDict(object):
     def __init__(self, iterable=(), default: Any = EmptyDefault):
-        super().__init__(iterable=iterable)
+        self._dict = MutableMappingBase(iterable=iterable)
         self._default = default
 
     def __call__(self, value):
         try:
-            return self._mapping[value]
+            return self._dict[value]
         except KeyError as e:
             if self._default == EmptyDefault:
-                raise e
+                raise MissingKeyError(f"missing key {value} in mapping dict.")
             else:
                 return self._default
 
@@ -68,11 +72,18 @@ class Mappers(object):
 
     def map(self, name, value):
         mapper = self._mapper[name]
-        return mapper(value)
+        return mapper.map(value)
 
-    def multi_map(self, names, value):
+    def multi_map(self, value, names=None, only_one=False):
         mapped = dict()
+
+        if not names:
+            names = list(self._mapper.keys())
+
         for name in names:
-            mapped[name] = self.map(name=name, value=value)
+            if only_one:
+                return self.map(name=name, value=value)
+            else:
+                mapped[name] = self.map(name=name, value=value)
 
         return mapped

@@ -43,27 +43,19 @@ class MapperView(SequenceViewBase):
         self._mappers = MapperMixin()
 
     def add_dict_mapper(self, name, **kwargs):
-        self._mappers.add_mapper(name=name, **kwargs)
+        self._mappers.add_dict_mapper(name=name, **kwargs)
 
     def add_callable_mapper(self, name, **kwargs):
-        self._mappers.add_mapper(name=name, **kwargs)
+        self._mappers.add_callable_mapper(name=name, **kwargs)
 
-    def _map(self, index, mappers=None):
+    def map(self, index, only_one=False, *mappers):
         value = self.iterable[index]
-
-        if isinstance(mappers, list):
-            mapped = self._mappers.multi_map(names=mappers, value=value)
-        else:
-            mapped = self._mappers.map(name=mappers, value=value)
+        mapped = self._mappers.multi_map(names=mappers, value=value, only_one=only_one)
 
         return mapped
 
-    def _map_by_default_mapper(self, index):
-        pass
-
-
-    def __getitem__(self, item):
-        self._map(index=item)
+    def __getitem__(self, index):
+        return self.map(index=index, only_one=True)
 
 
 class IndexLocateView(object):
@@ -306,32 +298,32 @@ class IterIndexMapView(IterIndexView):
     def __next__(self):
         index, value = super().__next__()
         return index, self._map(value=value)
-
-
-class IterIndexDictMapView(IterIndexMapView):
-    def __init__(self, mapping, mapping_default: Any = EmptyDefault, iterable=(),  **kwargs):
-        self._mapping = self._parse_mapping(mapping=mapping)
-        self._default = mapping_default
-
-        super().__init__(iterable, **kwargs)
-
-    @staticmethod
-    def _parse_mapping(mapping):
-        assert isinstance_mapping(mapping)
-        return mapping
-
-    def _map(self, value):
-        try:
-            return self._mapping[value]
-        except KeyError as e:
-            if self._default == EmptyDefault:
-                raise e
-            else:
-                return self._default
-
-    def __next__(self):
-        index, value = super().__next__()
-        return index, self._map(value=value)
+#
+#
+# class IterIndexDictMapView(IterIndexMapView):
+#     def __init__(self, mapping, mapping_default: Any = EmptyDefault, iterable=(),  **kwargs):
+#         self._mapping = self._parse_mapping(mapping=mapping)
+#         self._default = mapping_default
+#
+#         super().__init__(iterable, **kwargs)
+#
+#     @staticmethod
+#     def _parse_mapping(mapping):
+#         assert isinstance_mapping(mapping)
+#         return mapping
+#
+#     def _map(self, value):
+#         try:
+#             return self._mapping[value]
+#         except KeyError as e:
+#             if self._default == EmptyDefault:
+#                 raise e
+#             else:
+#                 return self._default
+#
+#     def __next__(self):
+#         index, value = super().__next__()
+#         return index, self._map(value=value)
 
 
 class BoolFilterView(IterIndexMapView):
@@ -366,7 +358,10 @@ class Rolling(object):
         pass
 
 
-a = IterIndexView([1,2,3])
+a = MapperView([1,2,3])
+a.add_dict_mapper(name='first', iterable={1:2, 2:4}, default='b')
+a.add_dict_mapper(name='second', iterable={1:'c', 2:'b'}, default='d')
 
-for i in a:
-    print(i)
+
+print(a.map(index=1))
+
