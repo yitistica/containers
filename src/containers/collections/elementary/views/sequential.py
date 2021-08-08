@@ -21,7 +21,8 @@ from typing import Any
 
 from containers.collections.elementary.views.base import Iterable
 from containers.collections.elementary.common.iterators import MixedSliceIndexIter
-from containers.collections.elementary.common.map_apply import CallableMapper, DictMapper, Mappers
+
+from containers.collections.elementary.views.common import MapperMixin
 
 from containers.core.common import isinstance_mapping
 from containers.core.base import reinstantiate_iterable
@@ -34,6 +35,35 @@ class SequenceViewBase(Iterable):
     @property
     def size(self):
         return len(self.iterable)
+
+
+class MapperView(SequenceViewBase):
+    def __init__(self, sequence=()):
+        super().__init__(sequence=sequence)
+        self._mappers = MapperMixin()
+
+    def add_dict_mapper(self, name, **kwargs):
+        self._mappers.add_mapper(name=name, **kwargs)
+
+    def add_callable_mapper(self, name, **kwargs):
+        self._mappers.add_mapper(name=name, **kwargs)
+
+    def _map(self, index, mappers=None):
+        value = self.iterable[index]
+
+        if isinstance(mappers, list):
+            mapped = self._mappers.multi_map(names=mappers, value=value)
+        else:
+            mapped = self._mappers.map(name=mappers, value=value)
+
+        return mapped
+
+    def _map_by_default_mapper(self, index):
+        pass
+
+
+    def __getitem__(self, item):
+        self._map(index=item)
 
 
 class IndexLocateView(object):

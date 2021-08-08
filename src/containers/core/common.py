@@ -22,6 +22,15 @@ def isinstance_set(iterable):
         return False
 
 
+def isinstance_non_mapping(iterable):
+    if isinstance_sequence(iterable=iterable):
+        return True
+    elif isinstance_set(iterable=iterable):
+        return True
+    else:
+        return False
+
+
 def remove_repeat(iterable=()):
     reduced = list()
     for element in iterable:
