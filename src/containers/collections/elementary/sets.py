@@ -20,7 +20,7 @@ class SequenceSet(MutableSequenceBase, MutableSetBase):
 
     def insert(self, index, value):
         self._discard(value=value)
-        self._iterable.insert(index, value)
+        self._list.insert(index, value)
 
     def _add(self, element):
         self.append(element)

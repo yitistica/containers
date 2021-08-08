@@ -8,11 +8,23 @@ composition-wise setting;
 view:
     retrieve view;
 
+
+add mapping;
+
+add_apply_mapping(mapping_name, mapping, default)
+add_dict_mapping()
+
+
+
 """
 from typing import Any
 
 from containers.collections.elementary.views.base import Iterable
 from containers.collections.elementary.common.iterators import MixedSliceIndexIter
+from containers.collections.elementary.common.map_apply import CallableMapper, DictMapper, Mappers
+
+from containers.core.common import isinstance_mapping
+from containers.core.base import reinstantiate_iterable
 
 
 class SequenceViewBase(Iterable):
@@ -30,9 +42,6 @@ class IndexLocateView(object):
 
         self._size = len(self._iterable)
 
-    def _construct_iterable(self, iterable):
-        return type(self._iterable)(iterable)
-
     def _get_by_index(self, index):
         if isinstance(index, int):
             sub_sequence = [self._iterable[index]]
@@ -41,10 +50,10 @@ class IndexLocateView(object):
         else:
             raise TypeError(f"index {index} is not a valid index.")
 
-        return self._construct_iterable(iterable=sub_sequence)
+        return reinstantiate_iterable(self, iterable=sub_sequence)
 
     def _get_by_indices(self, indices):
-        sub_sequence = self._construct_iterable(iterable=())
+        sub_sequence = list()
         if isinstance(indices, (int, slice)):
             sub_sequence += self._get_by_index(index=indices)
         elif isinstance(indices, tuple):  # multiple;
@@ -53,7 +62,7 @@ class IndexLocateView(object):
         else:
             raise TypeError(f"indices/index {indices} is not a valid index.")
 
-        return sub_sequence
+        return reinstantiate_iterable(self, iterable=sub_sequence)
 
     def _set_by_index(self, index, value):
         """
@@ -236,15 +245,30 @@ class IterIndexView(SequenceViewBase):
         return index, self.iterable[index]
 
 
-class EmptyDefault(object):
-    pass
+
+class IndexMapView(IterIndexView):
+    def __init__(self, mapping, iterable, **kwargs):
+        self._mapping = self._parse_mapping(mapping=mapping)
+
+        super().__init__(iterable, **kwargs)
+
+    @staticmethod
+    def _parse_mapping(mapping):
+        assert callable(mapping)
+        return mapping
+
 
 
 class IterIndexMapView(IterIndexView):
     def __init__(self, mapping, iterable, **kwargs):
+        self._mapping = self._parse_mapping(mapping=mapping)
+
         super().__init__(iterable, **kwargs)
+
+    @staticmethod
+    def _parse_mapping(mapping):
         assert callable(mapping)
-        self._mapping = mapping
+        return mapping
 
     def _map(self, value):
         return self._mapping(value)
@@ -254,18 +278,17 @@ class IterIndexMapView(IterIndexView):
         return index, self._map(value=value)
 
 
-class DictMapper(object):
-    def __init__(self, mapping):
-        assert isinstance(mapping, dict)
-
-
 class IterIndexDictMapView(IterIndexMapView):
-    def __init__(self, iterable, mapping, default: Any = EmptyDefault):
-        super().__init__(iterable)
-        assert isinstance(mapping, dict)
-        self._mapping = mapping
+    def __init__(self, mapping, mapping_default: Any = EmptyDefault, iterable=(),  **kwargs):
+        self._mapping = self._parse_mapping(mapping=mapping)
+        self._default = mapping_default
 
-        self._default = default
+        super().__init__(iterable, **kwargs)
+
+    @staticmethod
+    def _parse_mapping(mapping):
+        assert isinstance_mapping(mapping)
+        return mapping
 
     def _map(self, value):
         try:
@@ -281,21 +304,7 @@ class IterIndexDictMapView(IterIndexMapView):
         return index, self._map(value=value)
 
 
-class ApplyView(IndexIteratorbyComposition):
-    def __init__(self, iterable, mapping):
-        super().__init__(iterable)
-        assert callable(mapping)
-        self._mapping = mapping
-
-    def _map(self, value):
-        return self._mapping(value)
-
-    def __next__(self):
-        index, value = super().__next__()
-        return index, self._map(value=value)
-
-
-class BoolFilterView(ApplyView):
+class BoolFilterView(IterIndexMapView):
     """only for """
     pass
 
@@ -325,3 +334,9 @@ class EFilterView(object):
 class Rolling(object):
     def __init__(self):
         pass
+
+
+a = IterIndexView([1,2,3])
+
+for i in a:
+    print(i)

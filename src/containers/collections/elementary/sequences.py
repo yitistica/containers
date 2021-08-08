@@ -1,4 +1,4 @@
-from containers.collections.elementary.views.sequential import IndexIterator, IndexLocateView, DictMapView, ApplyView
+from containers.collections.elementary.views.sequential import IndexIterator, IndexLocateView
 from containers.core.base import MutableSequenceBase
 
 
@@ -15,7 +15,7 @@ class CategorySequence(MutableSequenceBase):
 
     def _set_item(self, index, value):
 
-        self._iterable[index] = value
+        self._list[index] = value
 
 
 class StatisticsView(object):
@@ -35,20 +35,20 @@ class RandomView(object):
 class XList(MutableSequenceBase):
 
     def iter(self, from_=None, to_=None, step=1, max_step=-1, max_cycle=None, max_leap=None, restart=False):
-        return IndexIterator(self._iterable, from_=from_, to_=to_, step=step,
+        return IndexIterator(self._list, from_=from_, to_=to_, step=step,
                              max_step=max_step, max_cycle=max_cycle, max_leap=max_leap, restart=restart)
 
     def map(self, mapping, **kwargs):
         if isinstance(mapping, dict):
-            return DictMapView(iterable=self._iterable, mapping=mapping, **kwargs)
+            return DictMapView(iterable=self._list, mapping=mapping, **kwargs)
         elif callable(mapping):
-            return ApplyView(iterable=self._iterable, mapping=mapping)
+            return ApplyView(iterable=self._list, mapping=mapping)
         else:
             TypeError(f"mapping {type(mapping)} is not supported.")
 
     @property
     def iloc(self):
-        return IndexLocateView(sequence=self._iterable)
+        return IndexLocateView(sequence=self._list)
 
     def freeze(self):
         pass

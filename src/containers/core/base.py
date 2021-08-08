@@ -4,7 +4,12 @@ implementation of set, sequence & mapping by collections.abc.
 from collections.abc import Mapping, MutableMapping, Sequence, MutableSequence, Set, MutableSet
 
 
+def reinstantiate_iterable(obj, iterable):
+    return obj.__class__(iterable)
+
+
 class BaseMixin:
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self.__str__()})"
 
@@ -23,25 +28,25 @@ class SetBaseMinxin(BaseMixin):
 
 class SequenceBase(Sequence, SequenceBaseMinxin):
     def __init__(self, iterable=()):
-        self._iterable = tuple(iterable)
+        self._tuple = tuple(iterable)
 
     def __getitem__(self, index):
-        return self._iterable[index]
+        return self._tuple[index]
 
     def __len__(self):
-        return len(self._iterable)
+        return len(self._tuple)
 
     def __str__(self):
-        return str(self._iterable)
+        return str(self._tuple)
 
 
 class MutableSequenceBase(MutableSequence, SequenceBaseMinxin):
     def __init__(self, iterable=()):
-        self._iterable = list()
+        self._list = list()
         self.extend(iterable)  # a loop that uses append, which uses insert method;
 
     def _get_item(self, index):
-        return self._iterable[index]
+        return self._list[index]
 
     def __getitem__(self, index):
         return self._get_item(index=index)
@@ -50,25 +55,25 @@ class MutableSequenceBase(MutableSequence, SequenceBaseMinxin):
         """
         here if key is greater than the max of index,
         """
-        self._iterable[index] = value
+        self._list[index] = value
 
     def __setitem__(self, index, value):
         self._set_item(index=index, value=value)
 
     def _delete_item(self, index):
-        del self._iterable[index]
+        del self._list[index]
 
     def __delitem__(self, index):
         self._delete_item(index)
 
     def __len__(self):
-        return len(self._iterable)
+        return len(self._list)
 
     def insert(self, index, value):
-        self._iterable.insert(index, value)
+        self._list.insert(index, value)
 
     def __str__(self):
-        return str(self._iterable)
+        return str(self._list)
 
 
 class SetMixin(SetBaseMinxin):
