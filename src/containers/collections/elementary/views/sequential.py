@@ -9,16 +9,8 @@ view:
     retrieve view;
 
 
-add mapping;
-
-add_apply_mapping(mapping_name, mapping, default)
-add_dict_mapping()
-
-
 
 """
-from typing import Any
-
 from containers.collections.elementary.views.base import Iterable
 from containers.collections.elementary.common.iterators import MixedSliceIndexIter
 
@@ -42,20 +34,20 @@ class MapperView(SequenceViewBase):
         super().__init__(sequence=sequence)
         self._mappers = MapperMixin()
 
-    def add_dict_mapper(self, name, **kwargs):
+    def add_dict_mapper(self, name='default', **kwargs):
         self._mappers.add_dict_mapper(name=name, **kwargs)
 
-    def add_callable_mapper(self, name, **kwargs):
+    def add_callable_mapper(self, name='default', **kwargs):
         self._mappers.add_callable_mapper(name=name, **kwargs)
 
-    def map(self, index, only_one=False, *mappers):
+    def map_index(self, index, return_first=False, *mappers):
         value = self.iterable[index]
-        mapped = self._mappers.multi_map(names=mappers, value=value, only_one=only_one)
+        mapped = self._mappers.multi_map(names=mappers, value=value, return_first=return_first)
 
         return mapped
 
     def __getitem__(self, index):
-        return self.map(index=index, only_one=True)
+        return self.map_index(index=index, return_first=True)
 
 
 class IndexLocateView(object):
@@ -115,11 +107,6 @@ class IndexLocateView(object):
         indices.sort(reverse=True)
         for index in indices:
             self._delete_by_index(index=index)
-
-
-"""
-IndexViewBase
-"""
 
 
 class IndexIterator(object):
@@ -255,7 +242,6 @@ class IndexIterator(object):
 
 class IterIndexView(SequenceViewBase):
     def __init__(self, iterable=(), **kwargs):
-
         super().__init__(sequence=iterable)
         self._iterator = IndexIterator(self.size, **kwargs)
 
@@ -267,63 +253,18 @@ class IterIndexView(SequenceViewBase):
         return index, self.iterable[index]
 
 
+class IterIndexMapView(MapperView):
+    def __init__(self, sequence, return_first=True, **kwargs):
+        super().__init__(sequence=sequence)
+        self._iterator = IndexIterator(self.size, **kwargs)
+        self._return_first = return_first
 
-class IndexMapView(IterIndexView):
-    def __init__(self, mapping, iterable, **kwargs):
-        self._mapping = self._parse_mapping(mapping=mapping)
-
-        super().__init__(iterable, **kwargs)
-
-    @staticmethod
-    def _parse_mapping(mapping):
-        assert callable(mapping)
-        return mapping
-
-
-
-class IterIndexMapView(IterIndexView):
-    def __init__(self, mapping, iterable, **kwargs):
-        self._mapping = self._parse_mapping(mapping=mapping)
-
-        super().__init__(iterable, **kwargs)
-
-    @staticmethod
-    def _parse_mapping(mapping):
-        assert callable(mapping)
-        return mapping
-
-    def _map(self, value):
-        return self._mapping(value)
+    def __iter__(self):
+        return self
 
     def __next__(self):
-        index, value = super().__next__()
-        return index, self._map(value=value)
-#
-#
-# class IterIndexDictMapView(IterIndexMapView):
-#     def __init__(self, mapping, mapping_default: Any = EmptyDefault, iterable=(),  **kwargs):
-#         self._mapping = self._parse_mapping(mapping=mapping)
-#         self._default = mapping_default
-#
-#         super().__init__(iterable, **kwargs)
-#
-#     @staticmethod
-#     def _parse_mapping(mapping):
-#         assert isinstance_mapping(mapping)
-#         return mapping
-#
-#     def _map(self, value):
-#         try:
-#             return self._mapping[value]
-#         except KeyError as e:
-#             if self._default == EmptyDefault:
-#                 raise e
-#             else:
-#                 return self._default
-#
-#     def __next__(self):
-#         index, value = super().__next__()
-#         return index, self._map(value=value)
+        index = self._iterator.__next__()
+        return index, self.map_index(index=index, return_first=self._return_first)
 
 
 class BoolFilterView(IterIndexMapView):
@@ -358,10 +299,11 @@ class Rolling(object):
         pass
 
 
-a = MapperView([1,2,3])
+a = IterIndexMapView(sequence=[1,2,3], return_first=True)
 a.add_dict_mapper(name='first', iterable={1:2, 2:4}, default='b')
 a.add_dict_mapper(name='second', iterable={1:'c', 2:'b'}, default='d')
 
 
-print(a.map(index=1))
+for index, value in a:
+    print(value)
 

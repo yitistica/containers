@@ -74,14 +74,14 @@ class Mappers(object):
         mapper = self._mapper[name]
         return mapper.map(value)
 
-    def multi_map(self, value, names=None, only_one=False):
+    def multi_map(self, value, names=None, return_first=False):
         mapped = dict()
 
         if not names:
             names = list(self._mapper.keys())
 
         for name in names:
-            if only_one:
+            if return_first:
                 return self.map(name=name, value=value)
             else:
                 mapped[name] = self.map(name=name, value=value)
