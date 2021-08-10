@@ -14,7 +14,8 @@ view:
 from containers.collections.elementary.views.base import Iterable
 from containers.collections.elementary.common.iterators import MixedSliceIndexIter
 
-from containers.collections.elementary.views.common import MapperMixin
+from containers.collections.elementary.common.map_apply import CallableMapperCollector, \
+    DictMapperCollector, EmptyDefault
 
 from containers.core.common import isinstance_mapping
 from containers.core.base import reinstantiate_iterable
@@ -29,25 +30,69 @@ class SequenceViewBase(Iterable):
         return len(self.iterable)
 
 
-class MapperView(SequenceViewBase):
-    def __init__(self, sequence=()):
+class MapViewBase(SequenceViewBase):
+    def __init__(self, sequence, collector_cls):
         super().__init__(sequence=sequence)
-        self._mappers = MapperMixin()
+        self._mappers = collector_cls()
 
-    def add_dict_mapper(self, name='default', **kwargs):
-        self._mappers.add_dict_mapper(name=name, **kwargs)
+    def add(self, mapper, name=None, *args, **kwargs):
+        self._mappers.add(mapper=mapper, name=name, *args, **kwargs)
 
-    def add_callable_mapper(self, name='default', **kwargs):
-        self._mappers.add_callable_mapper(name=name, **kwargs)
-
-    def map_index(self, index, return_first=False, *mappers):
+    def map(self, index, names=None):
         value = self.iterable[index]
-        mapped = self._mappers.multi_map(names=mappers, value=value, return_first=return_first)
+
+        if names is None:
+            pass
+        if not isinstance(names, (set, list)):
+            return self._mappers.map(name=names, value=value)
+
+        mapped = self._mappers.multi_map(names=names, value=value)
 
         return mapped
 
-    def __getitem__(self, index):
-        return self.map_index(index=index, return_first=True)
+    @staticmethod
+    def _parse_item(item):
+        if isinstance(item, int):
+            index, names = item, None
+        elif isinstance(item, tuple):  # mappers;
+            index, names = item
+        else:
+            raise TypeError(f"item {item} cannot be parsed, only int or tuple (sized 2) is accepted.")
+
+        return index, names
+
+    def __getitem__(self, item):
+        index, names = self._parse_item(item=item)
+        self.map(index=index, names=names)
+
+
+class DictMapView(MapViewBase):
+    def __init__(self, sequence=(), default=EmptyDefault, *args, **kwargs):
+        super().__init__(sequence=sequence, collector_cls=DictMapperCollector)
+
+        if (len(args) == 1) and (len(kwargs) == 0):
+            self.add(mapper=args[0], name=None, default=default)
+        else:
+            for name, mapper in enumerate(args):
+                self.add(mapper=mapper, name=name, default=default)
+            for name, mapper in kwargs.items():
+                self.add(mapper=mapper, name=name, default=default)
+
+
+class CallableMapView(MapViewBase):
+    def __init__(self, sequence=(), params=None, *args, **kwargs):
+        super().__init__(sequence=sequence, collector_cls=CallableMapperCollector)
+
+        if not params:
+            params = dict()
+
+        if (len(args) == 1) and (len(kwargs) == 0):
+            self.add(mapper=args[0], name=None, **params)
+        else:
+            for name, mapper in enumerate(args):
+                self.add(mapper=mapper, name=name, **params)
+            for name, mapper in kwargs.items():
+                self.add(mapper=mapper, name=name, **params)
 
 
 class IndexLocateView(object):
@@ -253,7 +298,7 @@ class IterIndexView(SequenceViewBase):
         return index, self.iterable[index]
 
 
-class IterIndexMapView(MapperView):
+class IterMapView(DictMapView):
     def __init__(self, sequence, return_first=True, **kwargs):
         super().__init__(sequence=sequence)
         self._iterator = IndexIterator(self.size, **kwargs)
@@ -264,15 +309,15 @@ class IterIndexMapView(MapperView):
 
     def __next__(self):
         index = self._iterator.__next__()
-        return index, self.map_index(index=index, return_first=self._return_first)
-
-
-class BoolFilterView(IterIndexMapView):
-    """only for """
-    pass
+        return index, self.iterable[index], self.map_index(index=index, return_first=self._return_first)
 
 
 class FilterView(object):
+    pass
+
+
+class BoolFilterView(IterMapView):
+    """only for """
     pass
 
 
@@ -284,12 +329,6 @@ class GroupByView(object):
     pass
 
 
-class ElementView(object):
-    def __init__(self, type_, iterable):
-        self._type = type_
-        self._iterable = iterable
-
-
 class EFilterView(object):
     pass
 
@@ -299,11 +338,11 @@ class Rolling(object):
         pass
 
 
-a = IterIndexMapView(sequence=[1,2,3], return_first=True)
-a.add_dict_mapper(name='first', iterable={1:2, 2:4}, default='b')
-a.add_dict_mapper(name='second', iterable={1:'c', 2:'b'}, default='d')
-
-
-for index, value in a:
-    print(value)
+# a = IterMapView(sequence=[1, 2, 3], return_first=True)
+# a.add_dict_mapper(name='first', iterable={1:2, 2:4}, default='b')
+# a.add_dict_mapper(name='second', iterable={1:'c', 2:'b'}, default='d')
+#
+#
+# for index, value, mapped in a:
+#     print(index, value, mapped)
 

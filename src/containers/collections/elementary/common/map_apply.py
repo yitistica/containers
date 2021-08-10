@@ -12,14 +12,17 @@ class MissingKeyError(Exception):
 
 
 class Mapper(object):
-    pass
+
+    def map(self, *args, **kwargs):
+        pass
 
 
 class CallableMapper(Mapper):
-    def __init__(self, callable_, **kwargs):
+    def __init__(self, callable_, *args, **kwargs):
         super().__init__()
         self._mapping = self._parse_mapping(mapping=callable_)
-        self._params = kwargs
+        self._args = args
+        self._kwargs = kwargs
 
     @staticmethod
     def _parse_mapping(mapping):
@@ -27,63 +30,82 @@ class CallableMapper(Mapper):
         return mapping
 
     def map(self, value):
-        return self._mapping(value, **self._params)
+        return self._mapping(value, *self._args, **self._kwargs)
 
 
-class _CallableDict(object):
-    def __init__(self, iterable=(), default: Any = EmptyDefault):
-        self._dict = MutableMappingBase(iterable=iterable)
+class DictMapper(Mapper):
+    def __init__(self, iterable, default: Any = EmptyDefault):
+        super().__init__()
+        self._dict = self._parse_iterable(iterable=iterable)
         self._default = default
 
-    def __call__(self, value):
+    @staticmethod
+    def _parse_iterable(iterable):
+        dict_ = MutableMappingBase(iterable=iterable)
+        return dict_
+
+    def map(self, value):
         try:
             return self._dict[value]
-        except KeyError as e:
+        except KeyError:
             if self._default == EmptyDefault:
                 raise MissingKeyError(f"missing key {value} in mapping dict.")
             else:
                 return self._default
 
 
-class DictMapper(CallableMapper):
-    def __init__(self, iterable, default: Any = EmptyDefault):
-        callable_ = self._convert_dict_to_callable(iterable=iterable, default=default)
-        super().__init__(callable_=callable_)
-
-    @staticmethod
-    def _convert_dict_to_callable(iterable, default):
-        callable_dict = _CallableDict(iterable=iterable, default=default)
-        return callable_dict
-
-
-class Mappers(object):
+class MapperCollectorBase(object):
     """
     mapper collection
     """
     def __init__(self):
-        self._mapper = dict()
+        self._mappers = dict()
+        self._collection_size = 0
 
-    def add_mapper(self, name, mapper):
+    @property
+    def size(self):
+        return self._collection_size
+
+    def names(self):
+        return list(self._mappers.keys())
+
+    def _add_mapper(self, mapper, name=None):
         assert isinstance(mapper, Mapper)
-        self._mapper[name] = mapper
+        self._mappers[name] = mapper
+        self._collection_size += 1
 
     def delete_mapper(self, name):
-        del self._mapper[name]
+        del self._mappers[name]
+        self._collection_size -= 1
 
     def map(self, name, value):
-        mapper = self._mapper[name]
+        mapper = self._mappers[name]
         return mapper.map(value)
 
-    def multi_map(self, value, names=None, return_first=False):
+    def multi_map(self, value, names=None):
         mapped = dict()
 
-        if not names:
-            names = list(self._mapper.keys())
+        if names is None:
+            names = self.names()
 
         for name in names:
-            if return_first:
-                return self.map(name=name, value=value)
-            else:
-                mapped[name] = self.map(name=name, value=value)
+            _mapped = self.map(name=name, value=value)
+
+            if (self.size == 1) & (name is None):
+                return _mapped
 
         return mapped
+
+
+class CallableMapperCollector(MapperCollectorBase):
+
+    def add(self, mapper, name=None, **kwargs):
+        mapper = CallableMapper(callable_=mapper, **kwargs)
+        self._add_mapper(mapper=mapper, name=name)
+
+
+class DictMapperCollector(MapperCollectorBase):
+
+    def add(self, mapper, name=None, **kwargs):
+        mapper = DictMapper(iterable=mapper, **kwargs)
+        self._add_mapper(mapper=mapper, name=name)

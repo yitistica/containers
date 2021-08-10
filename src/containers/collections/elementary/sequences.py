@@ -1,4 +1,4 @@
-from containers.collections.elementary.views.sequential import IndexIterator, IndexLocateView
+from containers.collections.elementary.views.sequential import IndexIterator, IndexLocateView, DictMapView
 from containers.core.base import MutableSequenceBase
 
 
@@ -39,12 +39,11 @@ class XList(MutableSequenceBase):
                              max_step=max_step, max_cycle=max_cycle, max_leap=max_leap, restart=restart)
 
     def map(self, mapping, **kwargs):
-        if isinstance(mapping, dict):
-            return DictMapView(iterable=self._list, mapping=mapping, **kwargs)
-        elif callable(mapping):
-            return ApplyView(iterable=self._list, mapping=mapping)
-        else:
-            TypeError(f"mapping {type(mapping)} is not supported.")
+        pass
+
+    def imap(self, **kwargs):
+        map_view = DictMapView(sequence=self._list)
+        return map_view
 
     @property
     def iloc(self):
