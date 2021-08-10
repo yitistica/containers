@@ -18,11 +18,10 @@ class Mapper(object):
 
 
 class CallableMapper(Mapper):
-    def __init__(self, callable_, *args, **kwargs):
+    def __init__(self, callable_, **params):
         super().__init__()
         self._mapping = self._parse_mapping(mapping=callable_)
-        self._args = args
-        self._kwargs = kwargs
+        self._params = params
 
     @staticmethod
     def _parse_mapping(mapping):
@@ -30,7 +29,7 @@ class CallableMapper(Mapper):
         return mapping
 
     def map(self, value):
-        return self._mapping(value, *self._args, **self._kwargs)
+        return self._mapping(value, **self._params)
 
 
 class DictMapper(Mapper):

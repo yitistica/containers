@@ -15,7 +15,7 @@ from containers.collections.elementary.views.base import Iterable
 from containers.collections.elementary.common.iterators import MixedSliceIndexIter
 
 from containers.collections.elementary.common.map_apply import CallableMapperCollector, \
-    DictMapperCollector, EmptyDefault
+    DictMapperCollector, EmptyDefault, Any
 
 from containers.core.common import isinstance_mapping
 from containers.core.base import reinstantiate_iterable
@@ -28,130 +28,6 @@ class SequenceViewBase(Iterable):
     @property
     def size(self):
         return len(self.iterable)
-
-
-class MapViewBase(SequenceViewBase):
-    def __init__(self, sequence, collector_cls):
-        super().__init__(sequence=sequence)
-        self._mappers = collector_cls()
-
-    def add(self, mapper, name=None, *args, **kwargs):
-        self._mappers.add(mapper=mapper, name=name, *args, **kwargs)
-
-    def map(self, index, names=None):
-        value = self.iterable[index]
-
-        if names is None:
-            pass
-        if not isinstance(names, (set, list)):
-            return self._mappers.map(name=names, value=value)
-
-        mapped = self._mappers.multi_map(names=names, value=value)
-
-        return mapped
-
-    @staticmethod
-    def _parse_item(item):
-        if isinstance(item, int):
-            index, names = item, None
-        elif isinstance(item, tuple):  # mappers;
-            index, names = item
-        else:
-            raise TypeError(f"item {item} cannot be parsed, only int or tuple (sized 2) is accepted.")
-
-        return index, names
-
-    def __getitem__(self, item):
-        index, names = self._parse_item(item=item)
-        self.map(index=index, names=names)
-
-
-class DictMapView(MapViewBase):
-    def __init__(self, sequence=(), default=EmptyDefault, *args, **kwargs):
-        super().__init__(sequence=sequence, collector_cls=DictMapperCollector)
-
-        if (len(args) == 1) and (len(kwargs) == 0):
-            self.add(mapper=args[0], name=None, default=default)
-        else:
-            for name, mapper in enumerate(args):
-                self.add(mapper=mapper, name=name, default=default)
-            for name, mapper in kwargs.items():
-                self.add(mapper=mapper, name=name, default=default)
-
-
-class CallableMapView(MapViewBase):
-    def __init__(self, sequence=(), params=None, *args, **kwargs):
-        super().__init__(sequence=sequence, collector_cls=CallableMapperCollector)
-
-        if not params:
-            params = dict()
-
-        if (len(args) == 1) and (len(kwargs) == 0):
-            self.add(mapper=args[0], name=None, **params)
-        else:
-            for name, mapper in enumerate(args):
-                self.add(mapper=mapper, name=name, **params)
-            for name, mapper in kwargs.items():
-                self.add(mapper=mapper, name=name, **params)
-
-
-class IndexLocateView(object):
-    def __init__(self, sequence):
-        self._iterable = sequence
-
-        self._size = len(self._iterable)
-
-    def _get_by_index(self, index):
-        if isinstance(index, int):
-            sub_sequence = [self._iterable[index]]
-        elif isinstance(index, slice):
-            sub_sequence = self._iterable[index]
-        else:
-            raise TypeError(f"index {index} is not a valid index.")
-
-        return reinstantiate_iterable(self, iterable=sub_sequence)
-
-    def _get_by_indices(self, indices):
-        sub_sequence = list()
-        if isinstance(indices, (int, slice)):
-            sub_sequence += self._get_by_index(index=indices)
-        elif isinstance(indices, tuple):  # multiple;
-            for index in indices:
-                sub_sequence += self._get_by_index(index=index)
-        else:
-            raise TypeError(f"indices/index {indices} is not a valid index.")
-
-        return reinstantiate_iterable(self, iterable=sub_sequence)
-
-    def _set_by_index(self, index, value):
-        """
-        Make sure index to value is 1-to-1, e.g., confusion arises when a slice is mapped with a single value.
-        :param index: int, or slice.
-        :param value: Any or Iterable, in the case of slice, an iterable should be given.
-        :return:
-        """
-        self._iterable[index] = value
-
-    def _set_by_indices(self, indices, values):
-        indices_inter = MixedSliceIndexIter(indices=indices, size=self._size)
-        for which, index in enumerate(indices_inter):
-            self._set_by_index(index, values[which])
-
-    def __getitem__(self, indices):
-        values = self._get_by_indices(indices=indices)
-        return values
-
-    def __setitem__(self, indices, values):
-        self._set_by_indices(indices=indices, values=values)
-
-    def _delete_by_index(self, index):
-        del self._iterable[index]
-
-    def __delitem__(self, indices):
-        indices = list(set(MixedSliceIndexIter(indices=indices, size=self._size)))
-        indices.sort(reverse=True)
-        for index in indices:
-            self._delete_by_index(index=index)
 
 
 class IndexIterator(object):
@@ -298,18 +174,144 @@ class IterIndexView(SequenceViewBase):
         return index, self.iterable[index]
 
 
-class IterMapView(DictMapView):
-    def __init__(self, sequence, return_first=True, **kwargs):
-        super().__init__(sequence=sequence)
-        self._iterator = IndexIterator(self.size, **kwargs)
-        self._return_first = return_first
+class IterMapView(IterIndexView):
+    def __init__(self, map_view, **kwargs):
+        super().__init__(iterable=map_view.iterable, **kwargs)
+        self._map_view = map_view
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        index = self._iterator.__next__()
-        return index, self.iterable[index], self.map_index(index=index, return_first=self._return_first)
+        index, value = IterIndexView.__next__(self)
+        return index, value, self._map_view[index]
+
+
+class MapViewBase(SequenceViewBase):
+    def __init__(self, sequence, collector_cls):
+        super().__init__(sequence=sequence)
+        self._mappers = collector_cls()
+
+    def add(self, mapper, name=None, *args, **kwargs):
+        self._mappers.add(mapper=mapper, name=name, *args, **kwargs)
+
+    def map(self, index, names=None):
+        value = self.iterable[index]
+
+        if names is None:
+            pass
+        elif not isinstance(names, (set, list)):
+            return self._mappers.map(name=names, value=value)
+
+        mapped = self._mappers.multi_map(names=names, value=value)
+
+        return mapped
+
+    @staticmethod
+    def _parse_item(item):
+        if isinstance(item, int):
+            index, names = item, None
+        elif isinstance(item, tuple):  # mappers;
+            index, names = item
+        else:
+            raise TypeError(f"item {item} cannot be parsed, only int or tuple (sized 2) is accepted.")
+
+        return index, names
+
+    def __getitem__(self, item):
+        index, names = self._parse_item(item=item)
+        return self.map(index=index, names=names)
+
+    def iter(self, **kwargs):
+        return IterMapView(map_view=self, **kwargs)
+
+
+class DictMapView(MapViewBase):
+    def __init__(self, *args, sequence=(), default: Any = EmptyDefault, **kwargs):
+        super().__init__(sequence=sequence, collector_cls=DictMapperCollector)
+
+        if (len(args) == 1) and (len(kwargs) == 0):
+            self.add(mapper=args[0], name=None, default=default)
+        else:
+            for name, mapper in enumerate(args):
+                self.add(mapper=mapper, name=name, default=default)
+            for name, mapper in kwargs.items():
+                self.add(mapper=mapper, name=name, default=default)
+
+
+class CallableMapView(MapViewBase):
+    def __init__(self, *args, sequence=(), params=None, **kwargs):
+        super().__init__(sequence=sequence, collector_cls=CallableMapperCollector)
+
+        if not params:
+            params = dict()
+
+        if (len(args) == 1) and (len(kwargs) == 0):
+            self.add(mapper=args[0], name=None, **params)
+        else:
+            for name, mapper in enumerate(args):
+                self.add(mapper=mapper, name=name, **params)
+            for name, mapper in kwargs.items():
+                self.add(mapper=mapper, name=name, **params)
+
+
+class IndexLocateView(object):
+    def __init__(self, sequence):
+        self._iterable = sequence
+
+        self._size = len(self._iterable)
+
+    def _get_by_index(self, index):
+        if isinstance(index, int):
+            sub_sequence = [self._iterable[index]]
+        elif isinstance(index, slice):
+            sub_sequence = self._iterable[index]
+        else:
+            raise TypeError(f"index {index} is not a valid index.")
+
+        return reinstantiate_iterable(self, iterable=sub_sequence)
+
+    def _get_by_indices(self, indices):
+        sub_sequence = list()
+        if isinstance(indices, (int, slice)):
+            sub_sequence += self._get_by_index(index=indices)
+        elif isinstance(indices, tuple):  # multiple;
+            for index in indices:
+                sub_sequence += self._get_by_index(index=index)
+        else:
+            raise TypeError(f"indices/index {indices} is not a valid index.")
+
+        return reinstantiate_iterable(self, iterable=sub_sequence)
+
+    def _set_by_index(self, index, value):
+        """
+        Make sure index to value is 1-to-1, e.g., confusion arises when a slice is mapped with a single value.
+        :param index: int, or slice.
+        :param value: Any or Iterable, in the case of slice, an iterable should be given.
+        :return:
+        """
+        self._iterable[index] = value
+
+    def _set_by_indices(self, indices, values):
+        indices_inter = MixedSliceIndexIter(indices=indices, size=self._size)
+        for which, index in enumerate(indices_inter):
+            self._set_by_index(index, values[which])
+
+    def __getitem__(self, indices):
+        values = self._get_by_indices(indices=indices)
+        return values
+
+    def __setitem__(self, indices, values):
+        self._set_by_indices(indices=indices, values=values)
+
+    def _delete_by_index(self, index):
+        del self._iterable[index]
+
+    def __delitem__(self, indices):
+        indices = list(set(MixedSliceIndexIter(indices=indices, size=self._size)))
+        indices.sort(reverse=True)
+        for index in indices:
+            self._delete_by_index(index=index)
 
 
 class FilterView(object):
@@ -338,11 +340,8 @@ class Rolling(object):
         pass
 
 
-# a = IterMapView(sequence=[1, 2, 3], return_first=True)
-# a.add_dict_mapper(name='first', iterable={1:2, 2:4}, default='b')
-# a.add_dict_mapper(name='second', iterable={1:'c', 2:'b'}, default='d')
-#
-#
-# for index, value, mapped in a:
-#     print(index, value, mapped)
+a = DictMapView({1:2, 2:4}, {2:5, 3:7}, sequence=[1, 2, 3, 2, 3, 1, 1], default='b')
+
+for i in a.iter():
+    print(i)
 
