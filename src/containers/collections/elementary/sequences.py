@@ -53,5 +53,8 @@ class XList(MutableSequenceBase):
 
     @property
     def str(self):
-        return StrView()
+        return StrView(sequence=self._list)
 
+
+class Vector(XList):
+    pass

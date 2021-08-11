@@ -306,26 +306,43 @@ class BoolView(CallableMapView):
     pass
 
 
-class RegexView():
-    """
-
-    subsitute,
-    """
-    pass
-
-
-class _StrFind(CallableMapView):
-    def __init__(self, sequence, regexes, coerce=False):
+class RegexView(CallableMapView):
+    def __init__(self, sequence, regexes, output='both', find_all=False, coerce=True):
         arg_callables, kwarg_callables = self._parse_regexes_into_callable(regexes=regexes)
-        params = self._parse_params(coerce)
-        super().__init__(*arg_callables, sequence=(), params=params, **kwarg_callables)
+        params = self._parse_params(output=output, find_all=find_all, coerce=coerce)
+        super().__init__(*arg_callables, sequence=sequence, params=params, **kwarg_callables)
 
     @staticmethod
-    def _find_wrap(regex):
+    def _wrap_find(regex):
 
-        def _callabe(string):
+        def _callabe(string, output='both', find_all=False, coerce=True):
+
+            if coerce:
+                string = str(string)
+
+            results = []
             iterator = re.finditer(regex, string)
-            return iterator
+            for match in iterator:
+                if output == 'both':
+                    result = (match.span(), match.group())
+                elif output == 'value':
+                    result = match.group()
+                elif output == 'span':
+                    result = match.span()
+                elif output == 'count':
+                    result = 1
+                else:
+                    raise KeyError(f"output {output} can only take both, value or span.")
+
+                if not find_all:
+                    return result
+                else:
+                    results.append(result)
+
+            if output == 'count':
+                return len(results)
+            else:
+                return results
 
         return _callabe
 
@@ -333,36 +350,39 @@ class _StrFind(CallableMapView):
     def _parse_regexes_into_callable(regexes):
         arg_callables, kwarg_callables = list(), dict()
         if isinstance(regexes, str):
-            arg_callables = [_StrFind._find_wrap(regexes)]
+            arg_callables = [RegexView._wrap_find(regexes)]
         elif isinstance(regexes, (list, tuple)):
             kwarg_callables = dict()
             for regex in regexes:
-                kwarg_callables[regex] = _StrFind._find_wrap(regex)
+                kwarg_callables[regex] = RegexView._wrap_find(regex)
+        elif isinstance(regexes, dict):
+            kwarg_callables = dict()
+            for name, regex in regexes.items():
+                kwarg_callables[name] = RegexView._wrap_find(regex)
         else:
             raise ValueError(f"regexes by type {type(regexes)} is not accepted.")
 
         return arg_callables, kwarg_callables
 
     @staticmethod
-    def _parse_params(coerce, ):
-        params = {}
-        return params
-
+    def _parse_params(**kwargs):
+        return kwargs
 
 
 class StrView(SequenceViewBase):
     """
-    coerce
-    find,
-    find_all
     start view,
-    contain view;
     subsitute,
     """
     def __init__(self, sequence):
         super().__init__(sequence=sequence)
 
+    def regex(self, regexes, output='both', find_all=False, coerce=True):
+        return RegexView(sequence=self.iterable, regexes=regexes, output=output, find_all=find_all, coerce=coerce)
 
+    def contain(self, regex):
+        regex_view = RegexView(sequence=self.iterable, regexes=regex, output='count', find_all=False, coerce=True)
+        return regex_view
 
 
 
