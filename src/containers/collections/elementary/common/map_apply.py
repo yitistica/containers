@@ -93,6 +93,8 @@ class MapperCollectorBase(object):
             if (self.size == 1) & (name is None):
                 return _mapped
 
+            mapped[name] = _mapped
+
         return mapped
 
 

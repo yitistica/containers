@@ -17,7 +17,6 @@ from containers.collections.elementary.common.iterators import MixedSliceIndexIt
 from containers.collections.elementary.common.map_apply import CallableMapperCollector, \
     DictMapperCollector, EmptyDefault, Any
 
-from containers.core.common import isinstance_mapping
 from containers.core.base import reinstantiate_iterable
 
 
@@ -339,9 +338,4 @@ class Rolling(object):
     def __init__(self):
         pass
 
-
-a = DictMapView({1:2, 2:4}, {2:5, 3:7}, sequence=[1, 2, 3, 2, 3, 1, 1], default='b')
-
-for i in a.iter():
-    print(i)
 
