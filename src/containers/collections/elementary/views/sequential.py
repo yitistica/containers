@@ -302,18 +302,14 @@ class IndexLocateView(object):
             self._delete_by_index(index=index)
 
 
-class BoolView(CallableMapView):
-    pass
-
-
 class RegexView(CallableMapView):
-    def __init__(self, sequence, regexes, output='both', find_all=False, coerce=True):
-        arg_callables, kwarg_callables = self._parse_regexes_into_callable(regexes=regexes)
+    def __init__(self, sequence, patterns, output='both', find_all=False, coerce=True):
+        arg_callables, kwarg_callables = self._parse_patterns_into_callable(patterns=patterns)
         params = self._parse_params(output=output, find_all=find_all, coerce=coerce)
         super().__init__(*arg_callables, sequence=sequence, params=params, **kwarg_callables)
 
     @staticmethod
-    def _wrap_find(regex):
+    def _wrap_find(pattern):
 
         def _callabe(string, output='both', find_all=False, coerce=True):
 
@@ -321,7 +317,7 @@ class RegexView(CallableMapView):
                 string = str(string)
 
             results = []
-            iterator = re.finditer(regex, string)
+            iterator = re.finditer(pattern, string)
             for match in iterator:
                 if output == 'both':
                     result = (match.span(), match.group())
@@ -347,22 +343,56 @@ class RegexView(CallableMapView):
         return _callabe
 
     @staticmethod
-    def _parse_regexes_into_callable(regexes):
+    def _parse_patterns_into_callable(patterns):
         arg_callables, kwarg_callables = list(), dict()
-        if isinstance(regexes, str):
-            arg_callables = [RegexView._wrap_find(regexes)]
-        elif isinstance(regexes, (list, tuple)):
+        if isinstance(patterns, str):
+            arg_callables = [RegexView._wrap_find(patterns)]
+        elif isinstance(patterns, (list, tuple)):
             kwarg_callables = dict()
-            for regex in regexes:
-                kwarg_callables[regex] = RegexView._wrap_find(regex)
-        elif isinstance(regexes, dict):
+            for pattern in patterns:
+                kwarg_callables[pattern] = RegexView._wrap_find(pattern)
+        elif isinstance(patterns, dict):
             kwarg_callables = dict()
-            for name, regex in regexes.items():
-                kwarg_callables[name] = RegexView._wrap_find(regex)
+            for name, pattern in patterns.items():
+                kwarg_callables[name] = RegexView._wrap_find(pattern)
         else:
-            raise ValueError(f"regexes by type {type(regexes)} is not accepted.")
+            raise ValueError(f"patterns by type {type(patterns)} is not accepted.")
 
         return arg_callables, kwarg_callables
+
+    @staticmethod
+    def _parse_params(**kwargs):
+        return kwargs
+
+
+class RegexSubView(CallableMapView):
+    def __init__(self, sequence, pattern, replacement, count=0, flags=0, coerce=True):
+        pattern_callabe = self._parse_pattern_into_callable(pattern=pattern)
+        params = self._parse_params(replacement=replacement, count=count, flags=flags, coerce=coerce)
+        super().__init__(pattern_callabe, sequence=sequence, params=params)
+
+    @staticmethod
+    def _wrap_sub(pattern):
+
+        def _callabe(string, replacement, count=0, flags=0, coerce=True):
+
+            if coerce:
+                string = str(string)
+
+            string = re.sub(pattern=pattern, repl=replacement, string=string, count=count, flags=flags)
+
+            return string
+
+        return _callabe
+
+    @staticmethod
+    def _parse_pattern_into_callable(pattern):
+        if isinstance(pattern, str):
+            callable_ = RegexSubView._wrap_sub(pattern)
+        else:
+            raise ValueError(f"pattern by type {type(pattern)} is not accepted.")
+
+        return callable_
 
     @staticmethod
     def _parse_params(**kwargs):
@@ -377,16 +407,25 @@ class StrView(SequenceViewBase):
     def __init__(self, sequence):
         super().__init__(sequence=sequence)
 
-    def regex(self, regexes, output='both', find_all=False, coerce=True):
-        return RegexView(sequence=self.iterable, regexes=regexes, output=output, find_all=find_all, coerce=coerce)
+    def regex(self, patterns, output='both', find_all=False, coerce=True):
+        return RegexView(sequence=self.iterable, patterns=patterns, output=output, find_all=find_all, coerce=coerce)
 
-    def contain(self, regex):
-        regex_view = RegexView(sequence=self.iterable, regexes=regex, output='count', find_all=False, coerce=True)
+    def contain(self, patterns):
+        regex_view = RegexView(sequence=self.iterable, patterns=patterns, output='count', find_all=False, coerce=True)
         return regex_view
 
+    def sub(self, pattern, replacement, count=0, flags=0, coerce=True):
+        sub_view = RegexSubView(sequence=self.iterable, pattern=pattern, replacement=replacement,
+                                count=count, flags=flags, coerce=coerce)
+        return sub_view
 
 
 class FilterView(object):
+    pass
+
+
+
+class BoolView(CallableMapView):
     pass
 
 
