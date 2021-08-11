@@ -1,22 +1,11 @@
 """
-
-sequential: index, index is generated;
-
-composition-wise setting;
-
-
-view:
-    retrieve view;
-
-
-
 """
+import re
+
 from containers.collections.elementary.views.base import Iterable
 from containers.collections.elementary.common.iterators import MixedSliceIndexIter
-
 from containers.collections.elementary.common.map_apply import CallableMapperCollector, \
     DictMapperCollector, EmptyDefault, Any
-
 from containers.core.base import reinstantiate_iterable
 
 
@@ -313,6 +302,70 @@ class IndexLocateView(object):
             self._delete_by_index(index=index)
 
 
+class BoolView(CallableMapView):
+    pass
+
+
+class RegexView():
+    """
+
+    subsitute,
+    """
+    pass
+
+
+class _StrFind(CallableMapView):
+    def __init__(self, sequence, regexes, coerce=False):
+        arg_callables, kwarg_callables = self._parse_regexes_into_callable(regexes=regexes)
+        params = self._parse_params(coerce)
+        super().__init__(*arg_callables, sequence=(), params=params, **kwarg_callables)
+
+    @staticmethod
+    def _find_wrap(regex):
+
+        def _callabe(string):
+            iterator = re.finditer(regex, string)
+            return iterator
+
+        return _callabe
+
+    @staticmethod
+    def _parse_regexes_into_callable(regexes):
+        arg_callables, kwarg_callables = list(), dict()
+        if isinstance(regexes, str):
+            arg_callables = [_StrFind._find_wrap(regexes)]
+        elif isinstance(regexes, (list, tuple)):
+            kwarg_callables = dict()
+            for regex in regexes:
+                kwarg_callables[regex] = _StrFind._find_wrap(regex)
+        else:
+            raise ValueError(f"regexes by type {type(regexes)} is not accepted.")
+
+        return arg_callables, kwarg_callables
+
+    @staticmethod
+    def _parse_params(coerce, ):
+        params = {}
+        return params
+
+
+
+class StrView(SequenceViewBase):
+    """
+    coerce
+    find,
+    find_all
+    start view,
+    contain view;
+    subsitute,
+    """
+    def __init__(self, sequence):
+        super().__init__(sequence=sequence)
+
+
+
+
+
 class FilterView(object):
     pass
 
@@ -322,15 +375,8 @@ class BoolFilterView(IterMapView):
     pass
 
 
-class RegexFilter(object):
-    pass
-
 
 class GroupByView(object):
-    pass
-
-
-class EFilterView(object):
     pass
 
 

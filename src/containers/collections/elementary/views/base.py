@@ -1,9 +1,6 @@
 
 
 class BaseView(object):
-    """
-    view: ?
-    """
     def __init__(self, *args, **kwargs):
         pass
 

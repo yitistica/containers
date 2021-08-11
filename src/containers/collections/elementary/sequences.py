@@ -1,5 +1,6 @@
 from containers.collections.elementary.views.sequential import IndexIterator
 from containers.collections.elementary.views.sequential import DictMapView, CallableMapView
+from containers.collections.elementary.views.sequential import StrView
 from containers.collections.elementary.views.sequential import IndexLocateView
 from containers.core.base import MutableSequenceBase
 
@@ -49,3 +50,8 @@ class XList(MutableSequenceBase):
     @property
     def iloc(self):
         return IndexLocateView(sequence=self._list)
+
+    @property
+    def str(self):
+        return StrView()
+
