@@ -2,8 +2,8 @@
 Map View:
     1. iterable_view: consists of
         a. __getitem__() method that returns the value of the iterable;
-        b. iter_loc() method that generate an iterator of the iterable;
-    2. has
+        b. iter_loc() method that generate an iterator of the iterable.
+    2. map view itself should have __getitem__:
 """
 import re
 from typing import Any
@@ -35,17 +35,20 @@ class MapViewBase(object):
     def add(self, mapper, name=None, *args, **kwargs):
         self._mappers.add(mapper=mapper, name=name, *args, **kwargs)
 
-    def map(self, id_, names=None):
-        value = self._iterable_view[id_]
+    def value_map(self, value, names=None):
 
         if names is None:
             pass
         elif not isinstance(names, (set, list)):
-            return self._mappers.map(name=names, value=value)
+            return self._mappers.value_map(name=names, value=value)
 
         mapped = self._mappers.multi_map(names=names, value=value)
 
         return mapped
+
+    def map(self, id_, names=None):
+        value = self._iterable_view[id_]
+        return self.value_map(value=value, names=names)
 
     @staticmethod
     def _parse_item(item):
