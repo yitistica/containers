@@ -1,8 +1,9 @@
 """
 Map View:
     1. iterable_view: consists of
-        a. __getitem__() method that returns the value of the iterable;
-        b. iter_loc() method that generate an iterator of the iterable.
+        a. .__getitem__(item) method that returns the value of the iterable;
+        b. .iterable() property that refers to the original iterable;
+        b. .iter_loc(*args, **kwargs) method that generate an iterator of the iterable.
     2. map view itself should have __getitem__:
 """
 import re
@@ -31,6 +32,10 @@ class MapViewBase(object):
     def __init__(self, iterable_view, collector_cls):
         self._iterable_view = iterable_view
         self._mappers = collector_cls()
+
+    @property
+    def iterable(self):  # refer to the original iterable
+        return self._iterable_view.iterable
 
     def add(self, mapper, name=None, *args, **kwargs):
         self._mappers.add(mapper=mapper, name=name, *args, **kwargs)
