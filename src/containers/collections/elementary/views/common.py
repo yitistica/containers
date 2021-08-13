@@ -1,6 +1,9 @@
 """
 Map View:
-    1.
+    1. iterable_view: consists of
+        a. __getitem__() method that returns the value of the iterable;
+        b. iter_loc() method that generate an iterator of the iterable;
+    2. has
 """
 import re
 from typing import Any
@@ -10,20 +13,16 @@ from containers.collections.elementary.common.map_apply import EmptyDefault, Dic
 
 
 class MapIterView(object):
-    def __init__(self, map_view, loc_iterator_cls, *args, **kwargs):
-        """
+    def __init__(self, map_view, *args, **kwargs):
 
-        :param map_view:
-        :param loc_iterator_cls:
-        """
         self._map_view = map_view
-        self._location_iterator = loc_iterator_cls(*args, **kwargs)
+        self.iter_loc = self._map_view.iter_loc(*args, **kwargs)
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        location = self._location_iterator.__next__()
+        location = self.iter_loc.__next__()
         value = self._map_view.iterable[location]
         return location, value, self._map_view[location]
 
@@ -63,8 +62,8 @@ class MapViewBase(object):
         id_, names = self._parse_item(item=item)
         return self.map(id_=id_, names=names)
 
-    def iter(self, loc_iterator_cls, *args, **kwargs):
-        return MapIterView(self, loc_iterator_cls, *args, **kwargs)
+    def iter(self, *args, **kwargs):
+        return MapIterView(self, *args, **kwargs)
 
     @staticmethod
     def _parse_params(**kwargs):
@@ -72,7 +71,7 @@ class MapViewBase(object):
 
 
 class DictMapView(MapViewBase):
-    def __init__(self, *args, iterable_view=(), default: Any = EmptyDefault, **kwargs):
+    def __init__(self, iterable_view, *args, default: Any = EmptyDefault, **kwargs):
         super().__init__(iterable_view=iterable_view, collector_cls=DictMapperCollector)
 
         if (len(args) == 1) and (len(kwargs) == 0):
@@ -85,7 +84,7 @@ class DictMapView(MapViewBase):
 
 
 class CallableMapView(MapViewBase):
-    def __init__(self, *args, iterable_view=(), params=None, **kwargs):
+    def __init__(self, iterable_view, *args, params=None, **kwargs):
         super().__init__(iterable_view=iterable_view, collector_cls=CallableMapperCollector)
 
         if not params:
