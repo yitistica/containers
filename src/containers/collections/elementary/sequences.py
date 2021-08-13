@@ -1,6 +1,5 @@
-from containers.collections.elementary.views.base import IndexIterator
 from containers.collections.elementary.views.common import DictMapView, CallableMapView, StrView
-from containers.collections.elementary.views.sequential import IndexLocateView
+from containers.collections.elementary.views.sequential import IndexLocateView, IndexIterator
 from containers.core.base import MutableSequenceBase
 
 

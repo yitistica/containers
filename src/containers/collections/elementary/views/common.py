@@ -1,23 +1,23 @@
 """
-
-how to build a sequential map view:
-
-MapViewBase.chain
+Map View:
+    1.
 """
 import re
 from typing import Any
 
 from containers.collections.elementary.common.map_apply import EmptyDefault, DictMapperCollector, \
     CallableMapperCollector
-from containers.collections.elementary.views.base import SequenceViewBase, IterIndexView
-
-# iterable_view could be an iterator;
 
 
-class IterMapView(object):
-    def __init__(self, map_view, location_iterator):
+class MapIterView(object):
+    def __init__(self, map_view, loc_iterator_cls, *args, **kwargs):
+        """
+
+        :param map_view:
+        :param loc_iterator_cls:
+        """
         self._map_view = map_view
-        self._location_iterator = location_iterator
+        self._location_iterator = loc_iterator_cls(*args, **kwargs)
 
     def __iter__(self):
         return self
@@ -33,15 +33,11 @@ class MapViewBase(object):
         self._iterable_view = iterable_view
         self._mappers = collector_cls()
 
-    @property
-    def iterable(self):
-        return self._iterable_view
-
     def add(self, mapper, name=None, *args, **kwargs):
         self._mappers.add(mapper=mapper, name=name, *args, **kwargs)
 
     def map(self, id_, names=None):
-        value = self.iterable[id_]
+        value = self._iterable_view[id_]
 
         if names is None:
             pass
@@ -67,18 +63,17 @@ class MapViewBase(object):
         id_, names = self._parse_item(item=item)
         return self.map(id_=id_, names=names)
 
-    def iter(self):
-        return NotImplemented
+    def iter(self, loc_iterator_cls, *args, **kwargs):
+        return MapIterView(self, loc_iterator_cls, *args, **kwargs)
 
     @staticmethod
     def _parse_params(**kwargs):
         return kwargs
 
 
-
 class DictMapView(MapViewBase):
-    def __init__(self, *args, sequence=(), default: Any = EmptyDefault, **kwargs):
-        super().__init__(sequence=sequence, collector_cls=DictMapperCollector)
+    def __init__(self, *args, iterable_view=(), default: Any = EmptyDefault, **kwargs):
+        super().__init__(iterable_view=iterable_view, collector_cls=DictMapperCollector)
 
         if (len(args) == 1) and (len(kwargs) == 0):
             self.add(mapper=args[0], name=None, default=default)
@@ -90,8 +85,8 @@ class DictMapView(MapViewBase):
 
 
 class CallableMapView(MapViewBase):
-    def __init__(self, *args, sequence=(), params=None, **kwargs):
-        super().__init__(sequence=sequence, collector_cls=CallableMapperCollector)
+    def __init__(self, *args, iterable_view=(), params=None, **kwargs):
+        super().__init__(iterable_view=iterable_view, collector_cls=CallableMapperCollector)
 
         if not params:
             params = dict()
@@ -106,10 +101,10 @@ class CallableMapView(MapViewBase):
 
 
 class RegexView(CallableMapView):
-    def __init__(self, sequence, patterns, output='both', find_all=False, coerce=True):
+    def __init__(self, iterable_view, patterns, output='both', find_all=False, coerce=True):
         arg_callables, kwarg_callables = self._parse_patterns_into_callable(patterns=patterns)
         params = self._parse_params(output=output, find_all=find_all, coerce=coerce)
-        super().__init__(*arg_callables, sequence=sequence, params=params, **kwarg_callables)
+        super().__init__(*arg_callables, sequence=iterable_view, params=params, **kwarg_callables)
 
     @staticmethod
     def _wrap_find(pattern):
@@ -169,10 +164,10 @@ class RegexView(CallableMapView):
 
 
 class RegexSubView(CallableMapView):
-    def __init__(self, sequence, pattern, replacement, count=0, flags=0, coerce=True):
+    def __init__(self, iterable_view, pattern, replacement, count=0, flags=0, coerce=True):
         pattern_callabe = self._parse_pattern_into_callable(pattern=pattern)
         params = self._parse_params(replacement=replacement, count=count, flags=flags, coerce=coerce)
-        super().__init__(pattern_callabe, sequence=sequence, params=params)
+        super().__init__(pattern_callabe, sequence=iterable_view, params=params)
 
     @staticmethod
     def _wrap_sub(pattern):
@@ -202,29 +197,33 @@ class RegexSubView(CallableMapView):
         return kwargs
 
 
-class StrView(SequenceViewBase):
+class StrView(object):
 
-    def __init__(self, sequence):
-        super().__init__(sequence=sequence)
+    def __init__(self, iterable_view):
+        self._iterable_view = iterable_view
 
     def regex(self, patterns, output='both', find_all=False, coerce=True):
-        return RegexView(sequence=self.iterable, patterns=patterns, output=output, find_all=find_all, coerce=coerce)
+        return RegexView(iterable_view=self._iterable_view,
+                         patterns=patterns, output=output, find_all=find_all, coerce=coerce)
 
     def contains(self, patterns):
-        regex_view = RegexView(sequence=self.iterable, patterns=patterns, output='count', find_all=False, coerce=True)
+        regex_view = RegexView(iterable_view=self._iterable_view,
+                               patterns=patterns, output='count', find_all=False, coerce=True)
         return regex_view
 
     def startswith(self, pattern):
         pattern = f"^{pattern}"
-        regex_view = RegexView(sequence=self.iterable, patterns=pattern, output='count', find_all=False, coerce=True)
+        regex_view = RegexView(iterable_view=self._iterable_view,
+                               patterns=pattern, output='count', find_all=False, coerce=True)
         return regex_view
 
     def endswith(self, pattern):
         pattern = f"{pattern}$"
-        regex_view = RegexView(sequence=self.iterable, patterns=pattern, output='count', find_all=False, coerce=True)
+        regex_view = RegexView(iterable_view=self._iterable_view,
+                               patterns=pattern, output='count', find_all=False, coerce=True)
         return regex_view
 
     def sub(self, pattern, replacement, count=0, flags=0, coerce=True):
-        sub_view = RegexSubView(sequence=self.iterable, pattern=pattern, replacement=replacement,
-                                count=count, flags=flags, coerce=coerce)
+        sub_view = RegexSubView(iterable_view=self._iterable_view,
+                                pattern=pattern, replacement=replacement, count=count, flags=flags, coerce=coerce)
         return sub_view
