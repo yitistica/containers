@@ -1,6 +1,6 @@
+from containers.core.base import MutableSequenceBase
 from containers.collections.elementary.views.common import DictMapView, CallableMapView, StrView
 from containers.collections.elementary.views.sequential import SequenceView, LocateView
-from containers.core.base import MutableSequenceBase
 
 
 class InvalidCategoryValueError(Exception):
@@ -37,22 +37,21 @@ class XList(MutableSequenceBase):
 
     def __init__(self, sequence):
         super().__init__(iterable=sequence)
-
-        self.iterable_view = SequenceView(sequence=self._list)
+        self.sequence_view = SequenceView(sequence=self._list)
 
     def iter(self, *args, **kwargs):
-        return self.iterable_view.iter_loc(*args, **kwargs)
+        return self.sequence_view.iter_loc(*args, **kwargs)
 
     def map(self, *args, **kwargs):
-        return DictMapView(*args, sequence=self._list, **kwargs)
+        return DictMapView(self.sequence_view, *args, **kwargs)
 
     def apply(self, *args, params=None, **kwargs):
-        return CallableMapView(*args, sequence=self._list, params=params, **kwargs)
+        return CallableMapView(self.sequence_view, *args, params=params, **kwargs)
 
     @property
     def iloc(self):
-        return LocateView(sequence_view=self.iterable_view)
+        return LocateView(sequence_view=self.sequence_view)
 
     @property
     def str(self):
-        return StrView(iterable_view=self.iterable_view)
+        return StrView(iterable_view=self.sequence_view)

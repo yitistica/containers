@@ -42,4 +42,5 @@ class IterableView(ViewBase):
     def __getitem__(self, item):
         return self.iterable[item]
 
-    reinstantiate = reinstantiate_iterable
+    def reinstantiate(self, iterable):
+        return reinstantiate_iterable(obj=self._iterable, iterable=iterable)

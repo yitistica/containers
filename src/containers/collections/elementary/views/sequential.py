@@ -2,7 +2,6 @@
 from containers.collections.elementary.views.base import LocationIterator, IterableView
 from containers.collections.elementary.common.iterators import MixedSliceIndexIter
 from containers.collections.elementary.views.common import CallableMapView, MapIterView
-from containers.core.base import reinstantiate_iterable
 
 
 class IndexIterator(object):
@@ -173,7 +172,7 @@ class LocateView(object):
         else:
             raise TypeError(f"index {index} is not a valid index.")
 
-        return reinstantiate_iterable(self, iterable=sub_sequence)
+        return self.sequence_view.reinstantiate(iterable=sub_sequence)
 
     def _get_by_indices(self, indices):
         sub_sequence = list()
@@ -185,7 +184,7 @@ class LocateView(object):
         else:
             raise TypeError(f"indices/index {indices} is not a valid index.")
 
-        return reinstantiate_iterable(self, iterable=sub_sequence)
+        return self.sequence_view.reinstantiate(iterable=sub_sequence)
 
     def _set_by_index(self, index, value):
         """
