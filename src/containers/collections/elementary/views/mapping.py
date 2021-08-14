@@ -1,8 +1,4 @@
-"""
 
-iterview:
-
-"""
 from containers.collections.elementary.views.base import LocationIterator, IterableView
 
 
@@ -29,8 +25,12 @@ class LocateView(object):
     def __init__(self, mapping_view):
         self.mapping_view = mapping_view
 
+    @property
+    def mapping(self):
+        return self.mapping_view.iterable
+
     def _get_by_key(self, key):
-        sub_mapping = [(key, self.mapping_view[key]), ]
+        sub_mapping = [(key, self.mapping[key]), ]
         return sub_mapping
 
     def _get_by_keys(self, keys):
@@ -46,7 +46,7 @@ class LocateView(object):
         return self.mapping_view.reinstantiate(iterable=sub_mapping)
 
     def _set_by_key(self, key, value):
-        self.mapping_view[key] = value
+        self.mapping[key] = value
 
     def _set_by_keys(self, keys, values):
         for which, key in enumerate(keys):
@@ -60,7 +60,7 @@ class LocateView(object):
         self._set_by_keys(keys=indices, values=values)
 
     def _delete_by_key(self, key):
-        del self.mapping_view[key]
+        del self.mapping[key]
 
     def __delitem__(self, keys):
         for key in keys:
@@ -144,7 +144,7 @@ class RecursiveLocateView(object):
         return value
 
     def __setitem__(self, item, value):
-        if_exist, value = self._set_if_exists(item=item, value=value)
+        if_exist = self._set_if_exists(item=item, value=value)
 
         if not if_exist:
             raise KeyError(f"keys {item} does not exist.")
