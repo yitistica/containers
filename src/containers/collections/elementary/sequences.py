@@ -37,7 +37,10 @@ class XList(MutableSequenceBase):
 
     def __init__(self, sequence):
         super().__init__(iterable=sequence)
-        self.sequence_view = SequenceView(sequence=self._list)
+
+    @property
+    def sequence_view(self):
+        return SequenceView(sequence=self._list)
 
     def iter(self, *args, **kwargs):
         return self.sequence_view.iter_loc(*args, **kwargs)

@@ -1,20 +1,55 @@
-from collections.abc import ItemsView, KeysView, ValuesView
 
 from containers.core.base import MutableMappingBase
-from containers.collections.elementary.views.mapping import MappingView, LocateView, RecursiveLocateView
-from containers.collections.elementary.views.common import DictMapView, CallableMapView, StrView
 from containers.collections.elementary.sets import OrderedSet
+from containers.collections.elementary.views.common import DictMapView, CallableMapView, StrView
+from containers.collections.elementary.views.mapping import OrderedMappingView
+from containers.collections.elementary.views.mapping import MappingView, LocateView, RecursiveLocateView
 
 
 class Dict(MutableMappingBase):
-    def __init__(self, iterable):
+    def __init__(self, iterable=()):
         super().__init__(iterable=iterable)
+
+
+class OrderedDict(Dict):
+    def __init__(self, iterable=()):
+        self._ordered_keys = OrderedSet()
+        super().__init__(iterable=iterable)
+
+    def _get_item(self, key):
+        return self._mapping[key]
+
+    def _set_item(self, key, value):
+        if key in self._ordered_keys:
+            self._mapping[key] = value
+        else:
+            self._ordered_keys.add(key)
+            self._mapping[key] = value
+
+    def _delete_item(self, key):
+        del self._mapping[key]
+        self._ordered_keys.discard(key)
+
+    def __iter__(self):
+        return iter(self._ordered_keys)
+
+    def items(self):
+        return OrderedMappingView(mapping=self._mapping, ordered_keys=self._ordered_keys).ordered_items()
+
+    def keys(self):
+        return OrderedMappingView(mapping=self._mapping, ordered_keys=self._ordered_keys).ordered_keys()
+
+    def values(self):
+        return OrderedMappingView(mapping=self._mapping, ordered_keys=self._ordered_keys).ordered_value()
 
 
 class XDict(Dict):
-    def __init__(self, iterable):
+    def __init__(self, iterable=()):
         super().__init__(iterable=iterable)
-        self.mapping_view = MappingView(mapping=self._mapping)
+
+    @property
+    def mapping_view(self):
+        return MappingView(mapping=self._mapping)
 
     @property
     def loc(self):
@@ -34,61 +69,8 @@ class XDict(Dict):
     def str(self):
         return StrView(iterable_view=self.mapping_view)
 
+    def iter(self, *args, **kwargs):
+        pass
 
-class _CommonOrderedMapView:
-
-    @classmethod
-    def _from_iterable(cls, it):
-        return OrderedSet(it)
-
-
-class OrderedItemsView(ItemsView, _CommonOrderedMapView):
-
-    def __iter__(self):
-        for key in self._mapping._ordered_key:
-            yield (key, self._mapping[key])
-
-
-class OrderedKeysView(KeysView, _CommonOrderedMapView):
-
-    def __iter__(self):
-        yield from self._mapping._ordered_key
-
-
-class OrderedValuesView(ValuesView, _CommonOrderedMapView):
-
-    def __iter__(self):
-        for key in self._mapping._ordered_key:
-            yield self._mapping[key]
-
-
-class OrderedDict(Dict):
-    def __init__(self, iterable=()):
-        self._ordered_key = OrderedSet()
-        super().__init__(iterable=iterable)
-
-    def _get_item(self, key):
-        return self._mapping[key]
-
-    def _set_item(self, key, value):
-        if key in self._ordered_key:
-            self._mapping[key] = value
-        else:
-            self._ordered_key.add(key)
-            self._mapping[key] = value
-
-    def _delete_item(self, key):
-        del self._mapping[key]
-        self._ordered_key.discard(key)
-
-    def __iter__(self):
-        return iter(self._ordered_key)
-
-    def items(self):
-        return OrderedItemsView(self)
-
-    def keys(self):
-        return OrderedKeysView(self)
-
-    def values(self):
-        return OrderedValuesView(self)
+    def order(self, key_order=None):
+        pass

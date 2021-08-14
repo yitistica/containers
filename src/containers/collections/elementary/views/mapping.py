@@ -2,6 +2,25 @@
 from containers.collections.elementary.views.base import LocationIterator, IterableView
 
 
+class OrderedMappingView(object):
+
+    def __init__(self, mapping, ordered_keys):
+        self._ordered_keys = ordered_keys
+        self._mapping = mapping
+
+    def ordered_items(self):
+        for key in self._ordered_keys:
+            yield key, self._mapping[key]
+
+    def ordered_keys(self):
+        for key in self._ordered_keys:
+            yield key
+
+    def ordered_value(self):
+        for key in self._ordered_keys:
+            yield self._mapping[key]
+
+
 class MappingLocationIterator(LocationIterator):
 
     def __init__(self, mapping):
