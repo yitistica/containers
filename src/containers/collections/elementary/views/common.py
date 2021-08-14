@@ -17,7 +17,7 @@ class MapIterView(object):
     def __init__(self, map_view, *args, **kwargs):
 
         self._map_view = map_view
-        self.iter_loc = self._map_view.iter_loc(*args, **kwargs)
+        self.iter_loc = self._map_view.iterable_view.iter_loc(*args, **kwargs)
 
     def __iter__(self):
         return self
@@ -32,6 +32,10 @@ class MapViewBase(object):
     def __init__(self, iterable_view, collector_cls):
         self._iterable_view = iterable_view
         self._mappers = collector_cls()
+
+    @property
+    def iterable_view(self):
+        return self._iterable_view
 
     @property
     def iterable(self):  # refer to the original iterable
@@ -65,6 +69,9 @@ class MapViewBase(object):
             raise TypeError(f"item {item} cannot be parsed, only int or tuple (sized 2) is accepted.")
 
         return id_, names
+
+    def __iter__(self):
+        return self.iter()
 
     def __getitem__(self, item):
         id_, names = self._parse_item(item=item)
@@ -111,7 +118,7 @@ class RegexView(CallableMapView):
     def __init__(self, iterable_view, patterns, output='both', find_all=False, coerce=True):
         arg_callables, kwarg_callables = self._parse_patterns_into_callable(patterns=patterns)
         params = self._parse_params(output=output, find_all=find_all, coerce=coerce)
-        super().__init__(*arg_callables, iterable_view=iterable_view, params=params, **kwarg_callables)
+        super().__init__(iterable_view, *arg_callables, params=params, **kwarg_callables)
 
     @staticmethod
     def _wrap_find(pattern):
@@ -170,7 +177,7 @@ class RegexSubView(CallableMapView):
     def __init__(self, iterable_view, pattern, replacement, count=0, flags=0, coerce=True):
         pattern_callabe = self._parse_pattern_into_callable(pattern=pattern)
         params = self._parse_params(replacement=replacement, count=count, flags=flags, coerce=coerce)
-        super().__init__(pattern_callabe, iterable_view=iterable_view, params=params)
+        super().__init__(iterable_view, pattern_callabe, params=params)
 
     @staticmethod
     def _wrap_sub(pattern):
