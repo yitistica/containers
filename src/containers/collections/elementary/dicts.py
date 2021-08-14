@@ -174,7 +174,3 @@ class LaissezDict(Dict):
     @property
     def get_loc(self):
         return GetLocateView(mapping=self)
-
-
-for i in LaissezDict({'1': 2, 3: '4'}).keys():
-    print(i)

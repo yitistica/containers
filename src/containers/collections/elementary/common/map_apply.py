@@ -79,7 +79,7 @@ class MapperCollectorBase(object):
 
     def map(self, name, value):
         mapper = self._mappers[name]
-        return mapper.value_map(value)
+        return mapper.map(value)
 
     def multi_map(self, value, names=None):
         mapped = dict()

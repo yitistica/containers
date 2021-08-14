@@ -45,7 +45,7 @@ class MapViewBase(object):
         if names is None:
             pass
         elif not isinstance(names, (set, list)):
-            return self._mappers.value_map(name=names, value=value)
+            return self._mappers.map(name=names, value=value)
 
         mapped = self._mappers.multi_map(names=names, value=value)
 
@@ -111,7 +111,7 @@ class RegexView(CallableMapView):
     def __init__(self, iterable_view, patterns, output='both', find_all=False, coerce=True):
         arg_callables, kwarg_callables = self._parse_patterns_into_callable(patterns=patterns)
         params = self._parse_params(output=output, find_all=find_all, coerce=coerce)
-        super().__init__(*arg_callables, sequence=iterable_view, params=params, **kwarg_callables)
+        super().__init__(*arg_callables, iterable_view=iterable_view, params=params, **kwarg_callables)
 
     @staticmethod
     def _wrap_find(pattern):
@@ -165,16 +165,12 @@ class RegexView(CallableMapView):
 
         return arg_callables, kwarg_callables
 
-    @staticmethod
-    def _parse_params(**kwargs):
-        return kwargs
-
 
 class RegexSubView(CallableMapView):
     def __init__(self, iterable_view, pattern, replacement, count=0, flags=0, coerce=True):
         pattern_callabe = self._parse_pattern_into_callable(pattern=pattern)
         params = self._parse_params(replacement=replacement, count=count, flags=flags, coerce=coerce)
-        super().__init__(pattern_callabe, sequence=iterable_view, params=params)
+        super().__init__(pattern_callabe, iterable_view=iterable_view, params=params)
 
     @staticmethod
     def _wrap_sub(pattern):
@@ -198,10 +194,6 @@ class RegexSubView(CallableMapView):
             raise ValueError(f"pattern by type {type(pattern)} is not accepted.")
 
         return callable_
-
-    @staticmethod
-    def _parse_params(**kwargs):
-        return kwargs
 
 
 class StrView(object):

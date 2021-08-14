@@ -1,5 +1,5 @@
 from containers.collections.elementary.views.common import DictMapView, CallableMapView, StrView
-from containers.collections.elementary.views.sequential import IndexLocateView, IndexIterator
+from containers.collections.elementary.views.sequential import SequenceView, LocateView
 from containers.core.base import MutableSequenceBase
 
 
@@ -35,9 +35,13 @@ class RandomView(object):
 
 class XList(MutableSequenceBase):
 
-    def iter(self, from_=None, to_=None, step=1, max_step=-1, max_cycle=None, max_leap=None, restart=False):
-        return IndexIterator(self._list, from_=from_, to_=to_, step=step,
-                             max_step=max_step, max_cycle=max_cycle, max_leap=max_leap, restart=restart)
+    def __init__(self, sequence):
+        super().__init__(iterable=sequence)
+
+        self.iterable_view = SequenceView(sequence=self._list)
+
+    def iter(self, *args, **kwargs):
+        return self.iterable_view.iter_loc(*args, **kwargs)
 
     def map(self, *args, **kwargs):
         return DictMapView(*args, sequence=self._list, **kwargs)
@@ -47,12 +51,8 @@ class XList(MutableSequenceBase):
 
     @property
     def iloc(self):
-        return IndexLocateView(sequence=self._list)
+        return LocateView(sequence_view=self.iterable_view)
 
     @property
     def str(self):
-        return StrView(sequence=self._list)
-
-
-class Vector(XList):
-    pass
+        return StrView(iterable_view=self.iterable_view)
