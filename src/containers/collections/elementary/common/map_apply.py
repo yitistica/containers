@@ -18,10 +18,11 @@ class Mapper(object):
 
 
 class CallableMapper(Mapper):
-    def __init__(self, callable_, **params):
+    def __init__(self, callable_, *arg_params, **kwarg_params):
         super().__init__()
         self._mapping = self._parse_mapping(mapping=callable_)
-        self._params = params
+        self._arg_params = arg_params
+        self._kwarg_params = kwarg_params
 
     @staticmethod
     def _parse_mapping(mapping):
@@ -29,7 +30,12 @@ class CallableMapper(Mapper):
         return mapping
 
     def map(self, value):
-        return self._mapping(value, **self._params)
+        """
+
+        :param value: Any, placed 1st.
+        :return:
+        """
+        return self._mapping(value, *self._arg_params, **self._kwarg_params)
 
 
 class DictMapper(Mapper):
@@ -60,6 +66,9 @@ class MapperCollectorBase(object):
     def __init__(self):
         self._mappers = dict()
         self._collection_size = 0
+
+    def mappers(self):
+        return self._mappers
 
     @property
     def size(self):
@@ -97,12 +106,29 @@ class MapperCollectorBase(object):
 
         return mapped
 
+    def merge(self, other_collector):
+        self._mappers.update(other_collector.mappers())
+
 
 class CallableMapperCollector(MapperCollectorBase):
 
-    def add(self, mapper, name=None, **kwargs):
-        mapper = CallableMapper(callable_=mapper, **kwargs)
+    def add(self, mapper, name=None, arg_params=None, params=None):
+        if not arg_params:
+            arg_params = ()
+
+        if not params:
+            params = dict()
+
+        mapper = CallableMapper(callable_=mapper, *arg_params, **params)
         self._add_mapper(mapper=mapper, name=name)
+
+    def decor_add(self, *args, **kwargs):
+
+        def decorator(function):
+            self.add(mapper=function, *args, **kwargs)
+            return function
+
+        return decorator
 
 
 class DictMapperCollector(MapperCollectorBase):

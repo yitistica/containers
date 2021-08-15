@@ -29,9 +29,9 @@ class MapIterView(object):
 
 
 class MapViewBase(object):
-    def __init__(self, iterable_view, collector_cls):
+    def __init__(self, iterable_view, mapper_collector):
         self._iterable_view = iterable_view
-        self._mappers = collector_cls()
+        self._mappers = mapper_collector
 
     @property
     def iterable_view(self):
@@ -84,34 +84,43 @@ class MapViewBase(object):
     def _parse_params(**kwargs):
         return kwargs
 
+    def merge_mappers(self, other_collector):
+        self._mappers.merge(other_collector=other_collector)
+
 
 class DictMapView(MapViewBase):
-    def __init__(self, iterable_view, *args, default: Any = EmptyDefault, **kwargs):
-        super().__init__(iterable_view=iterable_view, collector_cls=DictMapperCollector)
+    def __init__(self, iterable_view, *args, default: Any = EmptyDefault, **kwarg_callables):
+        super().__init__(iterable_view=iterable_view, mapper_collector=DictMapperCollector())
 
-        if (len(args) == 1) and (len(kwargs) == 0):
+        if (len(args) == 1) and (not isinstance(args[0], DictMapperCollector)) and (len(kwarg_callables) == 0):
             self.add(mapper=args[0], name=None, default=default)
         else:
-            for name, mapper in enumerate(args):
-                self.add(mapper=mapper, name=name, default=default)
-            for name, mapper in kwargs.items():
+            for name, arg in enumerate(args):
+                if isinstance(arg, CallableMapperCollector):
+                    self.merge_mappers(other_collector=arg)
+                else:
+                    self.add(mapper=arg, name=name, default=default)
+            for name, mapper in kwarg_callables.items():
                 self.add(mapper=mapper, name=name, default=default)
 
 
 class CallableMapView(MapViewBase):
-    def __init__(self, iterable_view, *args, params=None, **kwargs):
-        super().__init__(iterable_view=iterable_view, collector_cls=CallableMapperCollector)
+    def __init__(self, iterable_view, *args, params=None, **kwarg_callables):
+        super().__init__(iterable_view=iterable_view, mapper_collector=CallableMapperCollector())
 
         if not params:
             params = dict()
 
-        if (len(args) == 1) and (len(kwargs) == 0):
-            self.add(mapper=args[0], name=None, **params)
+        if (len(args) == 1) and (not isinstance(args[0], CallableMapperCollector)) and (len(kwarg_callables) == 0):
+            self.add(mapper=args[0], name=None, params=params)
         else:
-            for name, mapper in enumerate(args):
-                self.add(mapper=mapper, name=name, **params)
-            for name, mapper in kwargs.items():
-                self.add(mapper=mapper, name=name, **params)
+            for name, arg in enumerate(args):
+                if isinstance(arg, CallableMapperCollector):
+                    self.merge_mappers(other_collector=arg)
+                else:
+                    self.add(mapper=arg, name=name, params=params)
+            for name, mapper in kwarg_callables.items():
+                self.add(mapper=mapper, name=name, params=params)
 
 
 class RegexView(CallableMapView):

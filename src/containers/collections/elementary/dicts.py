@@ -4,7 +4,7 @@ pop by condition;
 from containers.core.base import MutableMappingBase
 from containers.collections.elementary.sets import OrderedSet
 from containers.collections.elementary.views.common import DictMapView, CallableMapView, StrView
-from containers.collections.elementary.views.mapping import OrderedMappingView
+from containers.collections.elementary.views.mapping import OrderedItemsView
 from containers.collections.elementary.views.mapping import MappingView, LocateView, RecursiveLocateView
 
 
@@ -36,13 +36,13 @@ class OrderedDict(Dict):
         return iter(self._ordered_keys)
 
     def items(self):
-        return OrderedMappingView(mapping=self._mapping, ordered_keys=self._ordered_keys).ordered_items()
+        return OrderedItemsView(mapping=self._mapping, ordered_keys=self._ordered_keys).ordered_items()
 
     def keys(self):
-        return OrderedMappingView(mapping=self._mapping, ordered_keys=self._ordered_keys).ordered_keys()
+        return OrderedItemsView(mapping=self._mapping, ordered_keys=self._ordered_keys).ordered_keys()
 
     def values(self):
-        return OrderedMappingView(mapping=self._mapping, ordered_keys=self._ordered_keys).ordered_value()
+        return OrderedItemsView(mapping=self._mapping, ordered_keys=self._ordered_keys).ordered_values()
 
 
 class XDict(Dict):
