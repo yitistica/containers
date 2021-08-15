@@ -35,6 +35,11 @@ class IterableView(ViewBase):
     def iter_loc(self, *args, **kwargs):
         return NotImplemented
 
+    def iter(self, *args, **kwargs):
+        loc_iterator = self.iter_loc(*args, **kwargs)
+        for loc in loc_iterator:
+            yield loc, self.iterable[loc]
+
     @property
     def size(self):
         return len(self._iterable)

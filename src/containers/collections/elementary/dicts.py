@@ -1,4 +1,6 @@
-
+"""
+pop by condition;
+"""
 from containers.core.base import MutableMappingBase
 from containers.collections.elementary.sets import OrderedSet
 from containers.collections.elementary.views.common import DictMapView, CallableMapView, StrView
@@ -47,30 +49,33 @@ class XDict(Dict):
     def __init__(self, iterable=()):
         super().__init__(iterable=iterable)
 
-    @property
     def mapping_view(self):
         return MappingView(mapping=self._mapping)
 
     @property
     def loc(self):
-        return LocateView(mapping_view=self.mapping_view)
+        return LocateView(mapping_view=self.mapping_view())
 
     @property
     def rloc(self):
-        return RecursiveLocateView(mapping_view=self.mapping_view)
+        return RecursiveLocateView(mapping_view=self.mapping_view())
 
     def map(self, *args, **kwargs):
-        return DictMapView(self.mapping_view, *args, **kwargs)
+        return DictMapView(self.mapping_view(), *args, **kwargs)
 
     def apply(self, *args, params=None, **kwargs):
-        return CallableMapView(self.mapping_view, *args, params=params, **kwargs)
+        return CallableMapView(self.mapping_view(), *args, params=params, **kwargs)
 
     @property
     def str(self):
-        return StrView(iterable_view=self.mapping_view)
+        return StrView(iterable_view=self.mapping_view())
 
     def iter(self, *args, **kwargs):
         pass
 
     def order(self, key_order=None):
         pass
+
+
+class OrderedXDict(XDict):
+    pass

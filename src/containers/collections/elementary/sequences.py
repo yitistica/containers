@@ -38,23 +38,22 @@ class XList(MutableSequenceBase):
     def __init__(self, sequence):
         super().__init__(iterable=sequence)
 
-    @property
     def sequence_view(self):
         return SequenceView(sequence=self._list)
 
     def iter(self, *args, **kwargs):
-        return self.sequence_view.iter_loc(*args, **kwargs)
+        return self.sequence_view().iter(*args, **kwargs)
 
     def map(self, *args, **kwargs):
-        return DictMapView(self.sequence_view, *args, **kwargs)
+        return DictMapView(self.sequence_view(), *args, **kwargs)
 
     def apply(self, *args, params=None, **kwargs):
-        return CallableMapView(self.sequence_view, *args, params=params, **kwargs)
+        return CallableMapView(self.sequence_view(), *args, params=params, **kwargs)
 
     @property
     def iloc(self):
-        return LocateView(sequence_view=self.sequence_view)
+        return LocateView(sequence_view=self.sequence_view())
 
     @property
     def str(self):
-        return StrView(iterable_view=self.sequence_view)
+        return StrView(iterable_view=self.sequence_view())
