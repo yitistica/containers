@@ -31,9 +31,22 @@ def isinstance_non_mapping(iterable):
         return False
 
 
-def remove_repeat(iterable=()):
+def remove_repeat(iterable, keep_first=True):
+    set_ = set(iterable)
+
     reduced = list()
-    for element in iterable:
-        if element not in reduced:
+
+    if not keep_first:
+        _iter = reversed(iterable)
+    else:
+        _iter = iterable
+
+    for element in _iter:
+        if element in set_:
             reduced.append(element)
+            set_.discard(element)
+
+    if not keep_first:
+        reduced = reduced[::-1]
+
     return reduced

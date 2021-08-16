@@ -19,20 +19,6 @@ class CategorySequence(MutableSequenceBase):
         self._list[index] = value
 
 
-class StatisticsView(object):
-    pass
-
-    def apply(self):
-        pass
-
-    def count(self):
-        pass
-
-
-class RandomView(object):
-    pass
-
-
 class XList(MutableSequenceBase):
 
     def __init__(self, sequence):

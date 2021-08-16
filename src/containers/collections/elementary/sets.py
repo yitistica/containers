@@ -4,6 +4,7 @@ from containers.core.common import remove_repeat
 
 class SequenceSet(MutableSequenceBase, MutableSetBase):
     def __init__(self, iterable=()):
+        iterable = remove_repeat(iterable, keep_first=False)
         MutableSequenceBase.__init__(self, iterable=iterable)
 
     def which(self, value):
@@ -27,7 +28,7 @@ class SequenceSet(MutableSequenceBase, MutableSetBase):
 
     def _discard(self, value):
         index = self.which(value=value)
-        if index:
+        if index is not None:
             self._delete_item(index=index)
 
 

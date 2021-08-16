@@ -77,5 +77,5 @@ class XDict(Dict):
         pass
 
 
-class OrderedXDict(XDict):
+class OrderedXDict(OrderedDict, XDict):
     pass

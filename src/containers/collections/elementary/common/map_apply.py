@@ -14,7 +14,7 @@ class MissingKeyError(Exception):
 class Mapper(object):
 
     def map(self, *args, **kwargs):
-        pass
+        return NotImplemented
 
 
 class CallableMapper(Mapper):
