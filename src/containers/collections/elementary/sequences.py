@@ -1,22 +1,14 @@
 from containers.core.base import MutableSequenceBase
 from containers.collections.elementary.views.common import DictMapView, CallableMapView, StrView
 from containers.collections.elementary.views.sequential import SequenceView, LocateView
+from containers.collections.elementary.sets import OrderedSet
+from containers.core.common import remove_repeat
 
 
 class InvalidCategoryValueError(Exception):
     def __init__(self, value, category):
         message = f'Given value {value} is not of part of <{category}> .'
         super().__init__(message)
-
-
-class CategorySequence(MutableSequenceBase):
-    def __init__(self, categories):
-
-        super().__init__()
-
-    def _set_item(self, index, value):
-
-        self._list[index] = value
 
 
 class XList(MutableSequenceBase):
@@ -43,3 +35,9 @@ class XList(MutableSequenceBase):
     @property
     def str(self):
         return StrView(iterable_view=self.sequence_view())
+
+
+class XSetSequence(OrderedSet, XList):
+    def __init__(self, iterable=()):
+        iterable = remove_repeat(iterable, keep_first=False)
+        XList.__init__(self, sequence=iterable)

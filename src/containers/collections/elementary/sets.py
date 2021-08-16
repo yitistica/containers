@@ -2,10 +2,10 @@ from containers.core.base import SequenceBase, MutableSequenceBase, MutableSetBa
 from containers.core.common import remove_repeat
 
 
-class SequenceSet(MutableSequenceBase, MutableSetBase):
-    def __init__(self, iterable=()):
-        iterable = remove_repeat(iterable, keep_first=False)
-        MutableSequenceBase.__init__(self, iterable=iterable)
+class OrderedSetMixins:
+    _list: list
+    append = None
+    _delete_item = None
 
     def which(self, value):
         index = None
@@ -32,13 +32,13 @@ class SequenceSet(MutableSequenceBase, MutableSetBase):
             self._delete_item(index=index)
 
 
-class OrderedSet(SequenceSet):
-    """
-    use sequence set for ordered set
-    """
+class OrderedSet(OrderedSetMixins, MutableSetBase, MutableSequenceBase):
+    def __init__(self, iterable=()):
+        iterable = remove_repeat(iterable, keep_first=False)
+        MutableSequenceBase.__init__(self, iterable=iterable)
 
 
-class OrderedFrozenSet(SequenceBase):
+class OrderedFrozenSet(OrderedSetMixins, SequenceBase):
     def __init__(self, iterable=()):
         iterable = remove_repeat(iterable)
-        super().__init__(iterable=remove_repeat(iterable))
+        super().__init__(iterable=iterable)
