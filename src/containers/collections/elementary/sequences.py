@@ -1,8 +1,6 @@
 from containers.core.base import MutableSequenceBase
 from containers.collections.elementary.views.common import DictMapView, CallableMapView, StrView
 from containers.collections.elementary.views.sequential import SequenceView, LocateView
-from containers.collections.elementary.sets import OrderedSet
-from containers.core.common import remove_repeat
 
 
 class InvalidCategoryValueError(Exception):
@@ -37,7 +35,3 @@ class XList(MutableSequenceBase):
         return StrView(iterable_view=self.sequence_view())
 
 
-class XSetSequence(OrderedSet, XList):
-    def __init__(self, iterable=()):
-        iterable = remove_repeat(iterable, keep_first=False)
-        XList.__init__(self, sequence=iterable)
