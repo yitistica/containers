@@ -9,7 +9,7 @@ class InvalidCategoryValueError(Exception):
         super().__init__(message)
 
 
-class XList(MutableSequenceBase):
+class CommonSequentialExtension(MutableSequenceBase):
 
     def __init__(self, sequence):
         super().__init__(iterable=sequence)
@@ -30,8 +30,9 @@ class XList(MutableSequenceBase):
     def iloc(self):
         return LocateView(sequence_view=self.sequence_view())
 
+
+class XList(CommonSequentialExtension):
+
     @property
     def str(self):
         return StrView(iterable_view=self.sequence_view())
-
-
