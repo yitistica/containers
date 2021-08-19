@@ -242,3 +242,13 @@ class StrView(object):
         sub_view = RegexSubView(iterable_view=self._iterable_view,
                                 pattern=pattern, replacement=replacement, count=count, flags=flags, coerce=coerce)
         return sub_view
+
+
+
+class ContainView(CallableMapView):
+    """rely on bool view;
+     compare with another iterable;
+
+     """
+    def __init__(self, iterable_view):
+        self._iterable_view = iterable_view

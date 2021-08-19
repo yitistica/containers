@@ -38,10 +38,13 @@ class CallableMapper(Mapper):
         return self._mapping(value, *self._arg_params, **self._kwarg_params)
 
 
-class DictMapper(Mapper):
+class _DictCallable(object):
     def __init__(self, iterable, default: Any = EmptyDefault):
-        super().__init__()
         self._dict = self._parse_iterable(iterable=iterable)
+        self._default = None
+        self.set_default(default=default)
+
+    def set_default(self, default):
         self._default = default
 
     @staticmethod
@@ -49,14 +52,27 @@ class DictMapper(Mapper):
         dict_ = MutableMappingBase(iterable=iterable)
         return dict_
 
-    def map(self, value):
+    def __getitem__(self, item):
         try:
-            return self._dict[value]
+            return self._dict[item]
         except KeyError:
             if self._default == EmptyDefault:
-                raise MissingKeyError(f"missing key {value} in mapping dict.")
+                raise MissingKeyError(f"missing key {item} in mapping dict.")
             else:
                 return self._default
+
+    def __call__(self, item):
+        return self[item]
+
+
+class DictMapper(CallableMapper):
+    def __init__(self, iterable, default: Any = EmptyDefault):
+        callable_ = _DictCallable(iterable=iterable, default=default)
+        super().__init__(callable_=callable_)
+
+
+class ContainMapper(CallableMapper):
+    pass
 
 
 class MapperCollectorBase(object):

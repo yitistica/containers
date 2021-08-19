@@ -87,14 +87,6 @@ class BoolView(CallableMapView):
     pass
 
 
-class CompareView(MapIterView):
-    """rely on bool view;
-     compare with another iterable;
-
-     """
-    pass
-
-
 class BoolFilterView(MapIterView):
     """only for """
     pass
