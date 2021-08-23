@@ -132,7 +132,7 @@ class RegexView(CallableMapView):
     @staticmethod
     def _wrap_find(pattern):
 
-        def _callabe(string, output='both', find_all=False, coerce=True):
+        def _callable(string, output='both', find_all=False, coerce=True):
 
             if coerce:
                 string = str(string)
@@ -161,7 +161,7 @@ class RegexView(CallableMapView):
             else:
                 return results
 
-        return _callabe
+        return _callable
 
     @staticmethod
     def _parse_patterns_into_callable(patterns):
@@ -184,14 +184,14 @@ class RegexView(CallableMapView):
 
 class RegexSubView(CallableMapView):
     def __init__(self, iterable_view, pattern, replacement, count=0, flags=0, coerce=True):
-        pattern_callabe = self._parse_pattern_into_callable(pattern=pattern)
+        pattern_callable = self._parse_pattern_into_callable(pattern=pattern)
         params = self._parse_params(replacement=replacement, count=count, flags=flags, coerce=coerce)
-        super().__init__(iterable_view, pattern_callabe, params=params)
+        super().__init__(iterable_view, pattern_callable, params=params)
 
     @staticmethod
     def _wrap_sub(pattern):
 
-        def _callabe(string, replacement, count=0, flags=0, coerce=True):
+        def _callable(string, replacement, count=0, flags=0, coerce=True):
 
             if coerce:
                 string = str(string)
@@ -200,7 +200,7 @@ class RegexSubView(CallableMapView):
 
             return string
 
-        return _callabe
+        return _callable
 
     @staticmethod
     def _parse_pattern_into_callable(pattern):
