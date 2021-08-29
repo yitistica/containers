@@ -19,12 +19,11 @@ class LocationIterator(object):
 
 class IterableView(ViewBase):
     """
-    view class that wrap iterable and offers few common methods for iterable.
+    a view that wraps around the iterable and has the following methods:
+        a. iterable, iter_loc, and iter.
+    the aim of the wrap-around is to provide:
     """
     def __init__(self, iterable):
-        """
-        :param iterable: refers to the iterable (i.e. sequence) after being constructed.
-        """
         self._iterable = iterable
         super().__init__()
 

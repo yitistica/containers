@@ -115,7 +115,7 @@ class MapperCollectorBase(object):
         for name in names:
             _mapped = self.map(name=name, value=value)
 
-            if (self.size == 1) & (name is None):
+            if (self.size == 1) & (name is None):  # ! bypass if only 1:
                 return _mapped
 
             mapped[name] = _mapped

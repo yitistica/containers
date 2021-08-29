@@ -1,6 +1,8 @@
 from containers.core.base import MutableSequenceBase
-from containers.collections.elementary.views.common import DictMapView, CallableMapView, StrView
-from containers.collections.elementary.views.sequential import SequenceView, LocateView
+from containers.collections.elementary.views.common import DictMapView, \
+    CallableMapView, StrView
+from containers.collections.elementary.views.sequential import SequenceView, \
+    LocateView
 
 
 class InvalidCategoryValueError(Exception):
@@ -24,7 +26,8 @@ class CommonSequentialExtension(MutableSequenceBase):
         return DictMapView(self.sequence_view(), *args, **kwargs)
 
     def apply(self, *args, params=None, **kwargs):
-        return CallableMapView(self.sequence_view(), *args, params=params, **kwargs)
+        return CallableMapView(
+            self.sequence_view(), *args, params=params, **kwargs)
 
     @property
     def iloc(self):

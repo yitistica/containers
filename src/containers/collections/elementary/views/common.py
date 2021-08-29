@@ -3,14 +3,15 @@ Map View:
     1. iterable_view: consists of
         a. .__getitem__(item) method that returns the value of the iterable;
         b. .iterable() property that refers to the original iterable;
-        b. .iter_loc(*args, **kwargs) method that generate an iterator of the iterable.
+        b. .iter_loc(*args, **kwargs) method that generate an iterator of the
+        iterable.
     2. map view itself should have __getitem__:
 """
 import re
 from typing import Any
 
-from containers.collections.elementary.common.map_apply import EmptyDefault, DictMapperCollector, \
-    CallableMapperCollector
+from containers.collections.elementary.common.map_apply import EmptyDefault, \
+    DictMapperCollector, CallableMapperCollector
 
 
 class MapIterView(object):
@@ -25,7 +26,7 @@ class MapIterView(object):
     def __next__(self):
         location = self.iter_loc.__next__()
         value = self._map_view.iterable[location]
-        return location, value, self._map_view[location]
+        return location, value, self._map_view.value_map(value=value)
 
 
 class MapViewBase(object):
@@ -66,7 +67,8 @@ class MapViewBase(object):
         elif isinstance(item, tuple):  # mappers;
             id_, names = item
         else:
-            raise TypeError(f"item {item} cannot be parsed, only int or tuple (sized 2) is accepted.")
+            raise TypeError(f"item {item} cannot be parsed, only int or tuple "
+                            f"(sized 2) is accepted.")
 
         return id_, names
 
@@ -87,12 +89,19 @@ class MapViewBase(object):
     def merge_mappers(self, other_collector):
         self._mappers.merge(other_collector=other_collector)
 
+    def apply(self, ):
+        pass
+
 
 class DictMapView(MapViewBase):
-    def __init__(self, iterable_view, *args, default: Any = EmptyDefault, **kwarg_callables):
-        super().__init__(iterable_view=iterable_view, mapper_collector=DictMapperCollector())
+    def __init__(self, iterable_view,
+                 *args, default: Any = EmptyDefault, **kwarg_callables):
+        super().__init__(iterable_view=iterable_view,
+                         mapper_collector=DictMapperCollector())
 
-        if (len(args) == 1) and (not isinstance(args[0], DictMapperCollector)) and (len(kwarg_callables) == 0):
+        if (len(args) == 1) \
+                and (not isinstance(args[0], DictMapperCollector)) \
+                and (len(kwarg_callables) == 0):
             self.add(mapper=args[0], name=None, default=default)
         else:
             for name, arg in enumerate(args):
@@ -105,13 +114,17 @@ class DictMapView(MapViewBase):
 
 
 class CallableMapView(MapViewBase):
-    def __init__(self, iterable_view, *args, params=None, **kwarg_callables):
-        super().__init__(iterable_view=iterable_view, mapper_collector=CallableMapperCollector())
+    def __init__(self, iterable_view,
+                 *args, params=None, **kwarg_callables):
+        super().__init__(iterable_view=iterable_view,
+                         mapper_collector=CallableMapperCollector())
 
         if not params:
             params = dict()
 
-        if (len(args) == 1) and (not isinstance(args[0], CallableMapperCollector)) and (len(kwarg_callables) == 0):
+        if (len(args) == 1) \
+                and (not isinstance(args[0], CallableMapperCollector)) \
+                and (len(kwarg_callables) == 0):
             self.add(mapper=args[0], name=None, params=params)
         else:
             for name, arg in enumerate(args):
@@ -125,9 +138,15 @@ class CallableMapView(MapViewBase):
 
 class RegexView(CallableMapView):
     def __init__(self, iterable_view, patterns, output='both', find_all=False, coerce=True):
-        arg_callables, kwarg_callables = self._parse_patterns_into_callable(patterns=patterns)
-        params = self._parse_params(output=output, find_all=find_all, coerce=coerce)
-        super().__init__(iterable_view, *arg_callables, params=params, **kwarg_callables)
+        arg_callables, kwarg_callables = \
+            self._parse_patterns_into_callable(patterns=patterns)
+
+        params = self._parse_params(output=output,
+                                    find_all=find_all,
+                                    coerce=coerce)
+
+        super().__init__(iterable_view,
+                         *arg_callables, params=params, **kwarg_callables)
 
     @staticmethod
     def _wrap_find(pattern):

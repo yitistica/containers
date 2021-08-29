@@ -1,16 +1,22 @@
 
-from containers.collections.elementary.views.base import LocationIterator, IterableView
-from containers.collections.elementary.common.iterators import MixedSliceIndexIter, IndexIterator
-from containers.collections.elementary.views.common import CallableMapView, MapIterView
+from containers.collections.elementary.views.base import LocationIterator, \
+    IterableView
+from containers.collections.elementary.common.iterators import \
+    MixedSliceIndexIter, IndexIterator
+from containers.collections.elementary.views.common import \
+    CallableMapView, MapIterView
 
 
 class SequenceLocationIterator(LocationIterator):
 
     def __init__(self, sequence, from_=None, to_=None, step=1,
                  max_step=-1, max_cycle=None, max_leap=None, restart=False):
-        size = len(sequence)
-        locator_iterator = IndexIterator(iterable_size=size, from_=from_, to_=to_, step=step,
-                                         max_step=max_step, max_cycle=max_cycle, max_leap=max_leap, restart=restart)
+
+        locator_iterator = IndexIterator(iterable_size=len(sequence),
+                                         from_=from_, to_=to_, step=step,
+                                         max_step=max_step, max_cycle=max_cycle,
+                                         max_leap=max_leap, restart=restart)
+
         super().__init__(locator_iterator=locator_iterator)
 
 
@@ -54,9 +60,11 @@ class LocateView(object):
 
     def _set_by_index(self, index, value):
         """
-        Make sure index to value is 1-to-1, e.g., confusion arises when a slice is mapped with a single value.
+        Make sure index to value is 1-to-1, e.g., confusion arises when a slice
+        is mapped with a single value.
         :param index: int, or slice.
-        :param value: Any or Iterable, in the case of slice, an iterable should be given.
+        :param value: Any or Iterable, in the case of slice, an iterable should
+        be given.
         :return:
         """
         self.sequence_view[index] = value
