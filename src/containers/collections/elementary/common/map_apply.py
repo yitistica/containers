@@ -107,6 +107,16 @@ class MapperCollectorBase(object):
         return mapper.map(value)
 
     def _parse_names(self, names):
+        """
+        :param names:
+            Cases:
+                1. (names == DefaultMapper) & (if collector size == 1):
+                    a.k.a user has not specified names arg:
+                2. specified None:
+                    return all
+                3. a name by a tuple is possible;
+        :return: list.
+        """
         if names is None:
             if names in self._mappers:
                 pass
@@ -127,7 +137,7 @@ class MapperCollectorBase(object):
 
         :param value: Any
         :param names:
-            3 Cases:
+            Cases:
                 1. (names == DefaultMapper) & (if collector size == 1):
                     a.k.a user has not specified names arg:
                 2. specified None:
@@ -137,7 +147,7 @@ class MapperCollectorBase(object):
         """
         names = self._parse_names(names=names)
 
-        if self.size == 1:
+        if not isinstance(names, list):
             mapped = self.map(name=names, value=value)
         else:
             mapped = dict()
@@ -147,7 +157,9 @@ class MapperCollectorBase(object):
         return mapped
 
     def merge(self, other_collector):
-        self._mappers.update(other_collector.mappers())
+        mappers = other_collector.mappers()
+        for name, mapper in mappers.items():
+            self._add_mapper(mapper=mapper, name=name)
 
 
 class CallableMapperCollector(MapperCollectorBase):

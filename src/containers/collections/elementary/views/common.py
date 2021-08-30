@@ -55,7 +55,7 @@ class WrappedIterableMapViewBase(object):
 
         if (names is None) or (names == DefaultMapper):
             pass
-        elif not isinstance(names, (set, list)):
+        elif not isinstance(names, list):
             return self._mappers.map(name=names, value=value)
 
         mapped = self._mappers.multi_map(names=names, value=value)
