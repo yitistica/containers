@@ -6,12 +6,18 @@ Map View:
         b. .iter_loc(*args, **kwargs) method that generate an iterator of the
         iterable.
     2. map view itself should have __getitem__:
+
+
 """
 import re
 from typing import Any
 
-from containers.collections.elementary.common.map_apply import EmptyDefault, \
-    DictMapperCollector, CallableMapperCollector
+from containers.collections.elementary.common.map_apply import DefaultMapper, \
+    EmptyDefault, DictMapperCollector, CallableMapperCollector
+
+
+class EmptyInput(object):
+    pass
 
 
 class MapIterView(object):
@@ -29,7 +35,7 @@ class MapIterView(object):
         return location, value, self._map_view.value_map(value=value)
 
 
-class MapViewBase(object):
+class WrappedIterableMapViewBase(object):
     def __init__(self, iterable_view, mapper_collector):
         self._iterable_view = iterable_view
         self._mappers = mapper_collector
@@ -45,9 +51,9 @@ class MapViewBase(object):
     def add(self, mapper, name=None, *args, **kwargs):
         self._mappers.add(mapper=mapper, name=name, *args, **kwargs)
 
-    def value_map(self, value, names=None):
+    def value_map(self, value, names=DefaultMapper):
 
-        if names is None:
+        if (names is None) or (names == DefaultMapper):
             pass
         elif not isinstance(names, (set, list)):
             return self._mappers.map(name=names, value=value)
@@ -56,7 +62,7 @@ class MapViewBase(object):
 
         return mapped
 
-    def map(self, id_, names=None):
+    def map(self, id_, names=DefaultMapper):
         value = self._iterable_view[id_]
         return self.value_map(value=value, names=names)
 
@@ -64,7 +70,7 @@ class MapViewBase(object):
     def _parse_item(item):
         if isinstance(item, int):
             id_, names = item, None
-        elif isinstance(item, tuple):  # mappers;
+        elif isinstance(item, tuple) and len(item) == 2:
             id_, names = item
         else:
             raise TypeError(f"item {item} cannot be parsed, only int or tuple "
@@ -89,8 +95,12 @@ class MapViewBase(object):
     def merge_mappers(self, other_collector):
         self._mappers.merge(other_collector=other_collector)
 
-    def apply(self, ):
-        pass
+
+class MapViewBase(WrappedIterableMapViewBase):
+    pass
+
+
+
 
 
 class DictMapView(MapViewBase):
@@ -262,12 +272,3 @@ class StrView(object):
                                 pattern=pattern, replacement=replacement, count=count, flags=flags, coerce=coerce)
         return sub_view
 
-
-
-class ContainView(CallableMapView):
-    """rely on bool view;
-     compare with another iterable;
-
-     """
-    def __init__(self, iterable_view):
-        self._iterable_view = iterable_view

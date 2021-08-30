@@ -3,6 +3,10 @@ from typing import Any
 from containers.core.base import MutableMappingBase
 
 
+class DefaultMapper(object):
+    pass
+
+
 class EmptyDefault(object):
     pass
 
@@ -71,10 +75,6 @@ class DictMapper(CallableMapper):
         super().__init__(callable_=callable_)
 
 
-class ContainMapper(CallableMapper):
-    pass
-
-
 class MapperCollectorBase(object):
     """
     mapper collection
@@ -106,19 +106,43 @@ class MapperCollectorBase(object):
         mapper = self._mappers[name]
         return mapper.map(value)
 
-    def multi_map(self, value, names=None):
-        mapped = dict()
-
+    def _parse_names(self, names):
         if names is None:
-            names = self.names()
+            if names in self._mappers:
+                pass
+            else:
+                names = self.names()
+        elif names == DefaultMapper:
+            if self.size == 1:
+                names = self.names()[0]
+            else:
+                names = self.names()
+        else:
+            pass
 
-        for name in names:
-            _mapped = self.map(name=name, value=value)
+        return names
 
-            if (self.size == 1) & (name is None):  # ! bypass if only 1:
-                return _mapped
+    def multi_map(self, value, names: Any = DefaultMapper):
+        """
 
-            mapped[name] = _mapped
+        :param value: Any
+        :param names:
+            3 Cases:
+                1. (names == DefaultMapper) & (if collector size == 1):
+                    a.k.a user has not specified names arg:
+                2. specified None:
+                    return all
+
+        :return:
+        """
+        names = self._parse_names(names=names)
+
+        if self.size == 1:
+            mapped = self.map(name=names, value=value)
+        else:
+            mapped = dict()
+            for name in names:
+                mapped[name] = _mapped = self.map(name=name, value=value)
 
         return mapped
 
