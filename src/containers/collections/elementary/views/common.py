@@ -16,10 +16,6 @@ from containers.collections.elementary.common.map_apply import DefaultMapper, \
     EmptyDefault, DictMapperCollector, CallableMapperCollector
 
 
-class EmptyInput(object):
-    pass
-
-
 class MapIterView(object):
     def __init__(self, map_view, *args, **kwargs):
 
@@ -52,14 +48,7 @@ class WrappedIterableMapViewBase(object):
         self._mappers.add(mapper=mapper, name=name, *args, **kwargs)
 
     def value_map(self, value, names=DefaultMapper):
-
-        if (names is None) or (names == DefaultMapper):
-            pass
-        elif not isinstance(names, list):
-            return self._mappers.map(name=names, value=value)
-
         mapped = self._mappers.multi_map(names=names, value=value)
-
         return mapped
 
     def map(self, id_, names=DefaultMapper):
@@ -69,7 +58,7 @@ class WrappedIterableMapViewBase(object):
     @staticmethod
     def _parse_item(item):
         if isinstance(item, int):
-            id_, names = item, None
+            id_, names = item, DefaultMapper
         elif isinstance(item, tuple) and len(item) == 2:
             id_, names = item
         else:

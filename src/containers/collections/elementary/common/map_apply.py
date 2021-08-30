@@ -110,11 +110,19 @@ class MapperCollectorBase(object):
         """
         :param names:
             Cases:
-                1. (names == DefaultMapper) & (if collector size == 1):
-                    a.k.a user has not specified names arg:
-                2. specified None:
-                    return all
-                3. a name by a tuple is possible;
+                I. names is not-given (i.e. names = DefaultMapper):
+                    1. only 1 mapper:
+                        return that mapper's (immutable) name.
+                    2. > 1 mappers:
+                        return the list of names.
+                II. names is given:
+                    3. names == None:
+                        3.a. None as the name of a mapper, return the name.
+                        3.b. no names by None, returns names of all mappers.
+                    4. names is an immutable item:
+                        return the name.
+                    5. names is a list:
+                        return the list of names.
         :return: list.
         """
         if names is None:
@@ -127,7 +135,7 @@ class MapperCollectorBase(object):
                 names = self.names()[0]
             else:
                 names = self.names()
-        else:
+        else:   # either immutable or a list:
             pass
 
         return names
@@ -136,13 +144,7 @@ class MapperCollectorBase(object):
         """
 
         :param value: Any
-        :param names:
-            Cases:
-                1. (names == DefaultMapper) & (if collector size == 1):
-                    a.k.a user has not specified names arg:
-                2. specified None:
-                    return all
-
+        :param names: refer to above.
         :return:
         """
         names = self._parse_names(names=names)
