@@ -13,7 +13,9 @@ import re
 from typing import Any
 
 from containers.collections.elementary.common.map_apply import DefaultMapper, \
-    EmptyDefault, DictMapperCollector, CallableMapperCollector
+    EmptyDefault, \
+    DictMapperCollector, CallableMapperCollector, \
+    CallableMapperCollectorChain
 
 
 class MapIterView(object):
@@ -31,7 +33,7 @@ class MapIterView(object):
         return location, value, self._map_view.value_map(value=value)
 
 
-class WrappedIterableMapViewBase(object):
+class MapViewBase(object):
     def __init__(self, iterable_view, mapper_collector):
         self._iterable_view = iterable_view
         self._mappers = mapper_collector
@@ -42,17 +44,17 @@ class WrappedIterableMapViewBase(object):
 
     @property
     def iterable(self):  # refer to the original iterable
-        return self._iterable_view.iterable
+        return self.iterable_view.iterable
 
     def add(self, mapper, name=None, *args, **kwargs):
         self._mappers.add(mapper=mapper, name=name, *args, **kwargs)
 
     def value_map(self, value, names=DefaultMapper):
-        mapped = self._mappers.multi_map(names=names, value=value)
+        mapped = self._mappers._map_by_layer(names=names, value=value)
         return mapped
 
     def map(self, id_, names=DefaultMapper):
-        value = self._iterable_view[id_]
+        value = self.iterable_view[id_]
         return self.value_map(value=value, names=names)
 
     @staticmethod
@@ -83,13 +85,6 @@ class WrappedIterableMapViewBase(object):
 
     def merge_mappers(self, other_collector):
         self._mappers.merge(other_collector=other_collector)
-
-
-class MapViewBase(WrappedIterableMapViewBase):
-    pass
-
-
-
 
 
 class DictMapView(MapViewBase):
@@ -135,8 +130,48 @@ class CallableMapView(MapViewBase):
                 self.add(mapper=mapper, name=name, params=params)
 
 
+
+class CallableMapViewChain(object):
+    def __init__(self, iterable_view, *collectors):
+        self._iterable_view = iterable_view
+        self._chain = CallableMapperCollectorChain()
+
+        for collector in collectors:
+            self.add_collector(collector=collector)
+
+    def add_collector(self, collector):
+        self._chain.add_collector(collector=collector)
+
+    def chain(self, collector):
+        self.add_collector(collector=collector)
+
+    @staticmethod
+    def _parse_item(item):
+        if isinstance(item, int):
+            id_, ending_layer = item, None
+        elif isinstance(item, tuple) and len(item) == 2:
+            id_, ending_layer = item
+            assert isinstance(ending_layer, int)
+        else:
+            raise TypeError(f"item {item} cannot be parsed, only int or tuple "
+                            f"(sized 2) is accepted.")
+
+        return id_, ending_layer
+
+    def __iter__(self):
+        return self.iter()
+
+    def __getitem__(self, item):
+        id_, ending_layer = self._parse_item(item=item)
+        return self._chain.chain_map(value=id_, ending_layer=ending_layer)
+
+    def iter(self, *args, **kwargs):
+        return MapIterView(self, *args, **kwargs)
+
+
 class RegexView(CallableMapView):
-    def __init__(self, iterable_view, patterns, output='both', find_all=False, coerce=True):
+    def __init__(self, iterable_view, patterns, output='both',
+                 find_all=False, coerce=True):
         arg_callables, kwarg_callables = \
             self._parse_patterns_into_callable(patterns=patterns)
 
@@ -201,9 +236,11 @@ class RegexView(CallableMapView):
 
 
 class RegexSubView(CallableMapView):
-    def __init__(self, iterable_view, pattern, replacement, count=0, flags=0, coerce=True):
+    def __init__(self, iterable_view, pattern, replacement,
+                 count=0, flags=0, coerce=True):
         pattern_callable = self._parse_pattern_into_callable(pattern=pattern)
-        params = self._parse_params(replacement=replacement, count=count, flags=flags, coerce=coerce)
+        params = self._parse_params(replacement=replacement, count=count,
+                                    flags=flags, coerce=coerce)
         super().__init__(iterable_view, pattern_callable, params=params)
 
     @staticmethod

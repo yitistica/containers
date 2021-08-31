@@ -75,7 +75,7 @@ class DictMapper(CallableMapper):
         super().__init__(callable_=callable_)
 
 
-class MapperCollectorBase(object):
+class MapperCollectorLayer(object):
     """
     mapper collection
     """
@@ -93,7 +93,7 @@ class MapperCollectorBase(object):
     def names(self):
         return list(self._mappers.keys())
 
-    def _add_mapper(self, mapper, name=None):
+    def add_mapper(self, mapper, name=None):
         assert isinstance(mapper, Mapper)
         self._mappers[name] = mapper
         self._collection_size += 1
@@ -102,7 +102,7 @@ class MapperCollectorBase(object):
         del self._mappers[name]
         self._collection_size -= 1
 
-    def map(self, name, value):
+    def map_by_mapper(self, name, value):
         mapper = self._mappers[name]
         return mapper.map(value)
 
@@ -140,7 +140,7 @@ class MapperCollectorBase(object):
 
         return names
 
-    def multi_map(self, value, names: Any = DefaultMapper):
+    def map(self, value, names: Any = DefaultMapper):
         """
 
         :param value: Any
@@ -150,21 +150,86 @@ class MapperCollectorBase(object):
         names = self._parse_names(names=names)
 
         if not isinstance(names, list):
-            mapped = self.map(name=names, value=value)
+            mapped = self.map_by_mapper(name=names, value=value)
         else:
             mapped = dict()
             for name in names:
-                mapped[name] = _mapped = self.map(name=name, value=value)
+                mapped[name] = self.map_by_mapper(name=name, value=value)
 
         return mapped
 
     def merge(self, other_collector):
         mappers = other_collector.mappers()
         for name, mapper in mappers.items():
-            self._add_mapper(mapper=mapper, name=name)
+            self.add_mapper(mapper=mapper, name=name)
 
 
-class CallableMapperCollector(MapperCollectorBase):
+class MultiLayerMapperCollectors(object):
+
+    def __init__(self):
+        self._layers = list()
+
+    @property
+    def size(self):
+        return len(self._layers)
+
+    def __len__(self):
+        return self.size
+
+    def add_collector(self, collector):
+
+        if isinstance(collector, MapperCollectorLayer):
+            self._layers.append(collector)
+        else:
+            raise TypeError(f"collector by type {type(collector)} is not "
+                            f"supported.")
+
+    def __getitem__(self, index):
+        return self._layers[index]
+
+    def __delitem__(self, index):
+        del self._layers[index]
+
+    def parse_layer_index(self, layer_index=None):
+
+        if layer_index is None:
+            layer_index = self.size - 1
+        elif 0 <= layer_index:
+            pass
+        elif (-self.size) <= layer_index < 0:
+            layer_index = self.size + layer_index
+        else:
+            raise IndexError(f"index {layer_index} out of range")
+        assert isinstance(layer_index, int)
+
+        return layer_index
+
+    def get_layer(self, index=None):
+        layer_index = self.parse_layer_index(layer_index=index)
+        return self._layers[layer_index]
+
+    def _map_by_layer(self, value, names: Any = DefaultMapper, layer=-1):
+        mapper_collector = self._layers[layer]
+        return mapper_collector.map(name=names, value=value)
+
+    def map(self, value, names: Any = DefaultMapper, ending_layer=-1):
+        ending_layer = self.parse_layer_index(layer_index=ending_layer)
+
+        for layer, collector in enumerate(self._layers):
+            if layer != ending_layer:
+                _names = DefaultMapper
+            else:
+                _names = names
+            value = collector.map(value=value,
+                                  names=_names)
+
+            if layer >= ending_layer:
+                break
+
+        return value
+
+
+class CallableMapperCollector(MapperCollectorLayer):
 
     def add(self, mapper, name=None, arg_params=None, params=None):
         if not arg_params:
@@ -174,7 +239,7 @@ class CallableMapperCollector(MapperCollectorBase):
             params = dict()
 
         mapper = CallableMapper(callable_=mapper, *arg_params, **params)
-        self._add_mapper(mapper=mapper, name=name)
+        self.add_mapper(mapper=mapper, name=name)
 
     def decor_add(self, *args, **kwargs):
 
@@ -185,8 +250,10 @@ class CallableMapperCollector(MapperCollectorBase):
         return decorator
 
 
-class DictMapperCollector(MapperCollectorBase):
+class DictMapperCollector(MapperCollectorLayer):
 
     def add(self, mapper, name=None, **kwargs):
         mapper = DictMapper(iterable=mapper, **kwargs)
-        self._add_mapper(mapper=mapper, name=name)
+        self.add_mapper(mapper=mapper, name=name)
+
+
