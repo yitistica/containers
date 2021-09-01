@@ -23,11 +23,14 @@ class CommonSequentialExtension(MutableSequenceBase):
         return self.sequence_view().iter(*args, **kwargs)
 
     def map(self, *args, **kwargs):
-        return DictMapView(self.sequence_view(), *args, **kwargs)
+        view = DictMapView(*args, **kwargs)
+        view.set_iterable_view(iterable_view=self.sequence_view())
+        return view
 
     def apply(self, *args, params=None, **kwargs):
-        return CallableMapView(
-            self.sequence_view(), *args, params=params, **kwargs)
+        view = CallableMapView(*args, params=params, **kwargs)
+        view.set_iterable_view(iterable_view=self.sequence_view())
+        return view
 
     @property
     def iloc(self):

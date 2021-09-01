@@ -4,15 +4,15 @@ from containers.core.base import MutableMappingBase
 
 
 class DefaultMapper(object):
-    pass
+    """"""
 
 
 class EmptyDefault(object):
-    pass
+    """"""
 
 
 class MissingKeyError(Exception):
-    pass
+    """"""
 
 
 class Mapper(object):
@@ -75,9 +75,13 @@ class DictMapper(CallableMapper):
         super().__init__(callable_=callable_)
 
 
-class MapperCollectorLayer(object):
+class Collector(object):
+    pass
+
+
+class MapperCollector(Collector):
     """
-    mapper collection
+    collector is independent of types of mapper;
     """
     def __init__(self):
         self._mappers = dict()
@@ -164,10 +168,12 @@ class MapperCollectorLayer(object):
             self.add_mapper(mapper=mapper, name=name)
 
 
-class MultiLayerMapperCollectors(object):
+class CollectorLayers(object):
 
     def __init__(self):
         self._layers = list()
+
+        self.add_layer(index=None)
 
     @property
     def size(self):
@@ -176,44 +182,44 @@ class MultiLayerMapperCollectors(object):
     def __len__(self):
         return self.size
 
-    def add_collector(self, collector):
+    def parse_layer_index(self, index=-1, auto_index=True):
+        size = self.size
 
-        if isinstance(collector, MapperCollectorLayer):
-            self._layers.append(collector)
+        if (-size) <= index < 0:
+            index = size + index
+        elif 0 <= index < size:
+            pass
         else:
-            raise TypeError(f"collector by type {type(collector)} is not "
-                            f"supported.")
+            if auto_index and (index >= size):
+                index = size - 1
+            else:
+                raise IndexError(f"index {index} out of range")
 
-    def __getitem__(self, index):
+        assert isinstance(index, int)
+
+        return index
+
+    def add_layer(self, index=None):
+        collector = MapperCollector()
+
+        if index is not None:
+            self._layers.insert(index, collector)
+        else:
+            self._layers.append(collector)
+
+    def get_layer(self, index):
         return self._layers[index]
 
-    def __delitem__(self, index):
+    def delete_layer(self, index):
         del self._layers[index]
-
-    def parse_layer_index(self, layer_index=None):
-
-        if layer_index is None:
-            layer_index = self.size - 1
-        elif 0 <= layer_index:
-            pass
-        elif (-self.size) <= layer_index < 0:
-            layer_index = self.size + layer_index
-        else:
-            raise IndexError(f"index {layer_index} out of range")
-        assert isinstance(layer_index, int)
-
-        return layer_index
-
-    def get_layer(self, index=None):
-        layer_index = self.parse_layer_index(layer_index=index)
-        return self._layers[layer_index]
 
     def _map_by_layer(self, value, names: Any = DefaultMapper, layer=-1):
         mapper_collector = self._layers[layer]
         return mapper_collector.map(name=names, value=value)
 
     def map(self, value, names: Any = DefaultMapper, ending_layer=-1):
-        ending_layer = self.parse_layer_index(layer_index=ending_layer)
+        ending_layer = self.parse_layer_index(index=ending_layer,
+                                              auto_index=False)
 
         for layer, collector in enumerate(self._layers):
             if layer != ending_layer:
@@ -229,17 +235,45 @@ class MultiLayerMapperCollectors(object):
         return value
 
 
-class CallableMapperCollector(MapperCollectorLayer):
+class MultiLayerMapperCollector(CollectorLayers):
 
-    def add(self, mapper, name=None, arg_params=None, params=None):
+    def add_mapper(self, mapper, name=None, index=-1):
+        assert isinstance(mapper, Mapper)
+
+        index = self.parse_layer_index(index=index, auto_index=False)
+        collector = self.get_layer(index=index)
+        collector.add_mapper(mapper=mapper, name=name)
+
+    def add_layer_and_mapper(self, mapper, name=None):
+        self.add_layer(index=None)
+        self.add_mapper(mapper=mapper, name=name, index=-1)
+
+    def delete_mapper(self, name=None, index=-1):
+        collector = self.get_layer(index=index)
+        collector.delete_mapper(name=name)
+
+    def merge(self, other_collector, source_layer=-1, target_layer=-1):
+        layer_other_collector = other_collector.get_layer(index=source_layer)
+        layer = self.get_layer(index=target_layer)
+        layer.merge(other_collector=layer_other_collector)
+
+
+class CallableMapperCollector(MultiLayerMapperCollector):
+
+    def add(self, mapper, name=None, index=-1, new_layer=False,
+            arg_params=None, params=None):
+
         if not arg_params:
             arg_params = ()
 
         if not params:
             params = dict()
 
+        if new_layer:
+            self.add_layer(index=None)
+
         mapper = CallableMapper(callable_=mapper, *arg_params, **params)
-        self.add_mapper(mapper=mapper, name=name)
+        self.add_mapper(mapper=mapper, name=name, index=index)
 
     def decor_add(self, *args, **kwargs):
 
@@ -250,10 +284,14 @@ class CallableMapperCollector(MapperCollectorLayer):
         return decorator
 
 
-class DictMapperCollector(MapperCollectorLayer):
+class DictMapperCollector(MultiLayerMapperCollector):
 
-    def add(self, mapper, name=None, **kwargs):
+    def add(self, mapper, name=None, index=-1, new_layer=False, **kwargs):
+
+        if new_layer:
+            self.add_layer(index=None)
+
         mapper = DictMapper(iterable=mapper, **kwargs)
-        self.add_mapper(mapper=mapper, name=name)
+        self.add_mapper(mapper=mapper, name=name, index=index)
 
 
