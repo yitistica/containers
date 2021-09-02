@@ -3,8 +3,7 @@ from containers.collections.elementary.views.base import LocationIterator, \
     IterableView
 from containers.collections.elementary.common.iterators import \
     MixedSliceIndexIter, IndexIterator
-from containers.collections.elementary.views.common import \
-    CallableMapView, MapIterView
+from containers.collections.elementary.views.common import MapIterView
 
 
 class SequenceLocationIterator(LocationIterator):
@@ -90,9 +89,6 @@ class LocateView(object):
         for index in indices:
             self._delete_by_index(index=index)
 
-
-class BoolView(CallableMapView):
-    pass
 
 
 class BoolFilterView(MapIterView):

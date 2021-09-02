@@ -3,7 +3,7 @@ pop by condition;
 """
 from containers.core.base import MutableMappingBase
 from containers.collections.elementary.sets import OrderedSet
-from containers.collections.elementary.views.common import DictMapView, CallableMapView, StrView
+from containers.collections.elementary.views.common import MixedMapperView, StrView
 from containers.collections.elementary.views.mapping import OrderedItemsView
 from containers.collections.elementary.views.mapping import MappingView, LocateView, RecursiveLocateView
 
@@ -60,11 +60,17 @@ class XDict(Dict):
     def rloc(self):
         return RecursiveLocateView(mapping_view=self.mapping_view())
 
-    def map(self, *args, **kwargs):
-        return DictMapView(self.mapping_view(), *args, **kwargs)
-
     def apply(self, *args, params=None, **kwargs):
-        return CallableMapView(self.mapping_view(), *args, params=params, **kwargs)
+        view = MixedMapperView()
+        view.callable_mappers.add_many(*args, params=params, **kwargs)
+        view.set_iterable_view(iterable_view=self.mapping_view())
+        return view
+
+    def convert(self, *args, **kwargs):
+        view = MixedMapperView()
+        view.dict_mappers.add_many(*args, **kwargs)
+        view.set_iterable_view(iterable_view=self.mapping_view())
+        return view
 
     @property
     def str(self):

@@ -1,17 +1,7 @@
 from typing import Any
 
-from containers.core.base import MutableMappingBase
-
 
 class DefaultMapper(object):
-    """"""
-
-
-class EmptyDefault(object):
-    """"""
-
-
-class MissingKeyError(Exception):
     """"""
 
 
@@ -21,65 +11,7 @@ class Mapper(object):
         return NotImplemented
 
 
-class CallableMapper(Mapper):
-    def __init__(self, callable_, *arg_params, **kwarg_params):
-        super().__init__()
-        self._mapping = self._parse_mapping(mapping=callable_)
-        self._arg_params = arg_params
-        self._kwarg_params = kwarg_params
-
-    @staticmethod
-    def _parse_mapping(mapping):
-        assert callable(mapping)
-        return mapping
-
-    def map(self, value):
-        """
-
-        :param value: Any, placed 1st.
-        :return:
-        """
-        return self._mapping(value, *self._arg_params, **self._kwarg_params)
-
-
-class _DictCallable(object):
-    def __init__(self, iterable, default: Any = EmptyDefault):
-        self._dict = self._parse_iterable(iterable=iterable)
-        self._default = None
-        self.set_default(default=default)
-
-    def set_default(self, default):
-        self._default = default
-
-    @staticmethod
-    def _parse_iterable(iterable):
-        dict_ = MutableMappingBase(iterable=iterable)
-        return dict_
-
-    def __getitem__(self, item):
-        try:
-            return self._dict[item]
-        except KeyError:
-            if self._default == EmptyDefault:
-                raise MissingKeyError(f"missing key {item} in mapping dict.")
-            else:
-                return self._default
-
-    def __call__(self, item):
-        return self[item]
-
-
-class DictMapper(CallableMapper):
-    def __init__(self, iterable, default: Any = EmptyDefault):
-        callable_ = _DictCallable(iterable=iterable, default=default)
-        super().__init__(callable_=callable_)
-
-
-class Collector(object):
-    pass
-
-
-class MapperCollector(Collector):
+class MappingLayer(object):
     """
     collector is independent of types of mapper;
     """
@@ -168,7 +100,7 @@ class MapperCollector(Collector):
             self.add_mapper(mapper=mapper, name=name)
 
 
-class CollectorLayers(object):
+class Layers(object):
 
     def __init__(self):
         self._layers = list()
@@ -200,7 +132,7 @@ class CollectorLayers(object):
         return index
 
     def add_layer(self, index=None):
-        collector = MapperCollector()
+        collector = MappingLayer()
 
         if index is not None:
             self._layers.insert(index, collector)
@@ -235,18 +167,14 @@ class CollectorLayers(object):
         return value
 
 
-class MultiLayerMapperCollector(CollectorLayers):
+class MapperCollector(Layers):
 
     def add_mapper(self, mapper, name=None, index=-1):
         assert isinstance(mapper, Mapper)
 
         index = self.parse_layer_index(index=index, auto_index=False)
-        collector = self.get_layer(index=index)
-        collector.add_mapper(mapper=mapper, name=name)
-
-    def add_layer_and_mapper(self, mapper, name=None):
-        self.add_layer(index=None)
-        self.add_mapper(mapper=mapper, name=name, index=-1)
+        layer = self.get_layer(index=index)
+        layer.add_mapper(mapper=mapper, name=name)
 
     def delete_mapper(self, name=None, index=-1):
         collector = self.get_layer(index=index)
@@ -256,42 +184,3 @@ class MultiLayerMapperCollector(CollectorLayers):
         layer_other_collector = other_collector.get_layer(index=source_layer)
         layer = self.get_layer(index=target_layer)
         layer.merge(other_collector=layer_other_collector)
-
-
-class CallableMapperCollector(MultiLayerMapperCollector):
-
-    def add(self, mapper, name=None, index=-1, new_layer=False,
-            arg_params=None, params=None):
-
-        if not arg_params:
-            arg_params = ()
-
-        if not params:
-            params = dict()
-
-        if new_layer:
-            self.add_layer(index=None)
-
-        mapper = CallableMapper(callable_=mapper, *arg_params, **params)
-        self.add_mapper(mapper=mapper, name=name, index=index)
-
-    def decor_add(self, *args, **kwargs):
-
-        def decorator(function):
-            self.add(mapper=function, *args, **kwargs)
-            return function
-
-        return decorator
-
-
-class DictMapperCollector(MultiLayerMapperCollector):
-
-    def add(self, mapper, name=None, index=-1, new_layer=False, **kwargs):
-
-        if new_layer:
-            self.add_layer(index=None)
-
-        mapper = DictMapper(iterable=mapper, **kwargs)
-        self.add_mapper(mapper=mapper, name=name, index=index)
-
-

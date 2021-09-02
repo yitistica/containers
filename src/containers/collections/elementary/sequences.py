@@ -1,6 +1,6 @@
 from containers.core.base import MutableSequenceBase
-from containers.collections.elementary.views.common import DictMapView, \
-    CallableMapView, StrView
+from containers.collections.elementary.views.common import MixedMapperView, \
+    StrView
 from containers.collections.elementary.views.sequential import SequenceView, \
     LocateView
 
@@ -22,13 +22,15 @@ class CommonSequentialExtension(MutableSequenceBase):
     def iter(self, *args, **kwargs):
         return self.sequence_view().iter(*args, **kwargs)
 
-    def map(self, *args, **kwargs):
-        view = DictMapView(*args, **kwargs)
+    def apply(self, *args, params=None, **kwargs):
+        view = MixedMapperView()
+        view.callable_mappers.add_many(*args, params=params, **kwargs)
         view.set_iterable_view(iterable_view=self.sequence_view())
         return view
 
-    def apply(self, *args, params=None, **kwargs):
-        view = CallableMapView(*args, params=params, **kwargs)
+    def convert(self, *args, **kwargs):
+        view = MixedMapperView()
+        view.dict_mappers.add_many(*args, **kwargs)
         view.set_iterable_view(iterable_view=self.sequence_view())
         return view
 

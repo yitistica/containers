@@ -7,14 +7,11 @@ Map View:
         iterable.
     2. map view itself should have __getitem__:
 
-
 """
 import re
-from typing import Any
 
-from containers.collections.elementary.common.map_apply import DefaultMapper, \
-    EmptyDefault, \
-    DictMapperCollector, CallableMapperCollector
+from containers.collections.elementary.mappers.base import DefaultMapper
+from containers.collections.elementary.mappers import MixedMapperCollector
 
 
 class MapIterView(object):
@@ -32,7 +29,7 @@ class MapIterView(object):
         return location, value, self._map_view.map(id_=location)
 
 
-class MapViewBase(object):
+class MapperViewBase(object):
     def __init__(self, mapper_collector):
         self._iterable_view = None
         self._mappers = mapper_collector
@@ -51,7 +48,7 @@ class MapViewBase(object):
     def iterable(self):  # refer to the original iterable
         return self.iterable_view.iterable
 
-    def add(self, *args, **kwargs):
+    def add_mapper(self, *args, **kwargs):
         self._mappers.add(*args, **kwargs)
 
     def value_map(self, value, names=DefaultMapper, ending_layer=-1):
@@ -93,48 +90,49 @@ class MapViewBase(object):
         self._mappers.merge(*args, **kwargs)
 
 
-class DictMapView(MapViewBase):
-    def __init__(self, *args, default: Any = EmptyDefault, **kwarg_callables):
-        super().__init__(mapper_collector=DictMapperCollector())
+class MixedMapperView(MapperViewBase):
+    def __init__(self):
+        super().__init__(mapper_collector=MixedMapperCollector())
 
-        if (len(args) == 1) \
-                and (not isinstance(args[0], DictMapperCollector)) \
-                and (len(kwarg_callables) == 0):
-            self.add(mapper=args[0], name=None, default=default)
-        else:
-            for name, arg in enumerate(args):
-                if isinstance(arg, DictMapperCollector):
-                    self.merge_mappers(other_collector=arg)
-                else:
-                    self.add(mapper=arg, name=name, default=default)
-            for name, mapper in kwarg_callables.items():
-                self.add(mapper=mapper, name=name, default=default)
+    @property
+    def callable_mappers(self):
+        return self._mappers.callable_mappers
 
+    @property
+    def dict_mappers(self):
+        return self._mappers.dict_mappers
 
-class CallableMapView(MapViewBase):
-    def __init__(self, *args, params=None, **kwarg_callables):
-        super().__init__(mapper_collector=CallableMapperCollector())
+    def apply(self, callable_, *args, **kwargs):
+        self._mappers.add_layer(index=None)
+        self.callable_mappers.add(callable_=callable_, *args, index=-1,
+                                  **kwargs)
+        return self
 
-        if not params:
-            params = dict()
+    def convert(self, iterable, *args, **kwargs):
+        self._mappers.add_layer(index=None)
+        self.dict_mappers.add(iterable=iterable, *args, index=-1,
+                              **kwargs)
 
-        if (len(args) == 1) \
-                and (not isinstance(args[0], CallableMapperCollector)) \
-                and (len(kwarg_callables) == 0):
-            self.add(mapper=args[0], name=None, params=params)
-        else:
-            for name, arg in enumerate(args):
-                if isinstance(arg, CallableMapperCollector):
-                    self.merge_mappers(other_collector=arg)
-                else:
-                    self.add(mapper=arg, name=name, params=params)
-            for name, mapper in kwarg_callables.items():
-                self.add(mapper=mapper, name=name, params=params)
+        return self
+
+    def multi_apply(self, *args, **kwargs):
+        self._mappers.add_layer(index=None)
+        self.callable_mappers.add_many(*args, **kwargs)
+        return self
+
+    def multi_convert(self, *args, **kwargs):
+        self._mappers.add_layer(index=None)
+        self.dict_mappers.add_many(*args, **kwargs)
+
+        return self
 
 
-class RegexView(CallableMapView):
+class RegexView(MixedMapperView):
     def __init__(self, patterns, output='both',
                  find_all=False, coerce=True):
+
+        super().__init__()
+
         arg_callables, kwarg_callables = \
             self._parse_patterns_into_callable(patterns=patterns)
 
@@ -142,7 +140,8 @@ class RegexView(CallableMapView):
                                     find_all=find_all,
                                     coerce=coerce)
 
-        super().__init__(*arg_callables, params=params, **kwarg_callables)
+        self.callable_mappers.add_many(*arg_callables,
+                                       params=params, **kwarg_callables)
 
     @staticmethod
     def _wrap_find(pattern):
@@ -164,7 +163,8 @@ class RegexView(CallableMapView):
                 elif output == 'count':
                     result = 1
                 else:
-                    raise KeyError(f"output {output} can only take both, value or span.")
+                    raise KeyError(f"output {output} can only take both, value "
+                                   f"or span.")
 
                 if not find_all:
                     return result
@@ -198,13 +198,17 @@ class RegexView(CallableMapView):
         return arg_callables, kwarg_callables
 
 
-class RegexSubView(CallableMapView):
+class RegexSubView(MixedMapperView):
     def __init__(self, pattern, replacement,
                  count=0, flags=0, coerce=True):
+
+        super().__init__()
+
         pattern_callable = self._parse_pattern_into_callable(pattern=pattern)
         params = self._parse_params(replacement=replacement, count=count,
                                     flags=flags, coerce=coerce)
-        super().__init__(pattern_callable, params=params)
+
+        self.callable_mappers.add(callable_=pattern_callable, params=params)
 
     @staticmethod
     def _wrap_sub(pattern):
